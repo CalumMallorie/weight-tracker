@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -13,11 +13,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application files
 COPY . .
 
-# Create and set permissions for data directory
-RUN mkdir -p /app/data && chown -R weightapp:weightapp /app/data
+# Create necessary directories and set permissions
+RUN mkdir -p /app/data /app/logs && \
+    chown -R weightapp:weightapp /app/data /app/logs
 
 # Set environment variable for database location (for persistence)
 ENV DATABASE_PATH=/app/data/weight_tracker.db

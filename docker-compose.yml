@@ -9,7 +9,9 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      - ./logs:/app/logs
     environment:
       - FLASK_DEBUG=false
       - PORT=8080
+      - LOG_LEVEL=INFO
     restart: unless-stopped 
