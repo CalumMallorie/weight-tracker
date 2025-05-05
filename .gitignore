@@ -59,4 +59,11 @@ venv.bak/
 *.swo
 
 # Data directory
-data/ 
+data/
+
+# Logs
+logs/
+*.log
+
+# Additional virtual environment patterns
+.venv/ 

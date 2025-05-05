@@ -110,7 +110,7 @@ def test_create_weight_plot_multiple_entries(mock_entries):
 def test_get_entries_by_time_window(app_context):
     """Test filtering entries by time window"""
     # Complete patch path
-    with patch('models.WeightEntry.query') as mock_query:
+    with patch('src.models.WeightEntry.query') as mock_query:
         # Create a chain of mocks for the query methods
         filter_mock = MagicMock()
         order_mock = MagicMock()

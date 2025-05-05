@@ -1,8 +1,11 @@
 from flask import Flask
 import os
-from models import db
-from routes import main as main_blueprint, api
-import services
+import logging
+from logging.handlers import RotatingFileHandler
+import sys
+from .models import db
+from .routes import main as main_blueprint, api
+from . import services
 
 def create_app(test_config=None):
     """Application factory function"""
@@ -19,6 +22,9 @@ def create_app(test_config=None):
         # Test configuration
         app.config.update(test_config)
     
+    # Set up logging
+    configure_logging(app)
+    
     # Initialize extensions
     db.init_app(app)
     
@@ -32,11 +38,47 @@ def create_app(test_config=None):
     
     return app
 
+def configure_logging(app):
+    """Configure logging for the application"""
+    # Set log level based on environment
+    log_level = os.environ.get('LOG_LEVEL', 'INFO')
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        numeric_level = logging.INFO
+    
+    # Configure root logger
+    logging.basicConfig(
+        level=numeric_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    
+    # Create a file handler if not in debug mode
+    if not app.debug:
+        log_dir = os.environ.get('LOG_DIR', 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            os.path.join(log_dir, 'weight_tracker.log'), 
+            maxBytes=10485760,  # 10MB
+            backupCount=5
+        )
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        ))
+        app.logger.addHandler(file_handler)
+    
+    # Log application startup
+    app.logger.info('Weight Tracker application starting up')
+
 def run_app():
     """Main function to run the application"""
     app = create_app()
     port = int(os.environ.get('PORT', 8080))
-    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true',
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.logger.info(f'Starting application on port {port} with debug={debug_mode}')
+    app.run(debug=debug_mode,
             host='0.0.0.0', 
             port=port)
 
