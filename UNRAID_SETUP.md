@@ -36,28 +36,29 @@ If you prefer using the UnRAID Docker UI:
 7. Set the port mapping: 8080:8080
 8. Click "Apply"
 
+### Method 3: Using the XML Template (Recommended for UnRAID)
+
+The repository now includes a proper XML template for UnRAID:
+
+1. Download the `weight-tracker.xml` file from this repository
+2. In UnRAID, go to the Docker tab and click "Add Container"
+3. At the bottom of the form, click "Upload" and select the `weight-tracker.xml` file
+4. Review the settings and adjust paths if needed
+5. Click "Apply"
+
 ## WebUI Integration in UnRAID
 
-The docker-compose.yml file now includes UnRAID-specific labels to properly display the WebUI button in the UnRAID interface:
+The proper way to have a WebUI button in UnRAID is through the XML template, which is now included in the repository. When using the template, the WebUI button will automatically appear.
+
+If you're using docker-compose or creating the container manually, UnRAID will recognize the WebUI through the following label:
 
 ```yaml
 labels:
-  - "org.opencontainers.image.title=Weight Tracker"
-  - "org.opencontainers.image.description=A simple weight tracking application"
-  - "org.opencontainers.image.authors=CalumMallorie"
-  - "org.opencontainers.image.url=https://github.com/calummallorie/weight-tracker"
-  - "io.unraid.webui=http://[IP]:[PORT:8080]"
-  - "io.unraid.icon=https://raw.githubusercontent.com/calummallorie/weight-tracker/main/unraid_icon.png"
+  - "com.unraid.template.webui=http://[IP]:[PORT:8080]/"
+  - "com.unraid.template.icon=https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/unraid_icon.png"
 ```
 
-To manually add WebUI support when creating a container through the UnRAID interface:
-
-1. In the "Add Container" form, scroll down to the "Extra Parameters" section
-2. Add the following labels:
-   - Key: `io.unraid.webui` Value: `http://[IP]:[PORT:8080]`
-   - Key: `io.unraid.icon` Value: `https://raw.githubusercontent.com/calummallorie/weight-tracker/main/unraid_icon.png`
-
-After adding these labels, a WebUI button will appear in the Docker container list, which opens the Weight Tracker application in your browser.
+The WebUI button will appear in the Docker container list and open the Weight Tracker application in your browser.
 
 ## About the "weight-tracker-weight-tracker" Image
 
