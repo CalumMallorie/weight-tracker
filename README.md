@@ -10,6 +10,7 @@ A web application for tracking and visualizing your weight over time.
 - Add notes to weight entries
 - View, manage, and delete entries
 - Fully responsive design for any device
+- Progressive Web App (PWA) support for installation on mobile devices
 
 ## Project Structure
 
@@ -148,4 +149,25 @@ http://YOUR_UNRAID_IP:8080
 
 The application stores all data in an SQLite database located at `/app/data/weight_tracker.db` inside the container. The Docker setup maps this directory to a persistent volume on your host system.
 
-To back up your data, simply make a copy of the database file from your mapped volume directory. 
+To back up your data, simply make a copy of the database file from your mapped volume directory.
+
+## Progressive Web App (PWA)
+
+This application supports PWA features, allowing you to install it on your iPhone or Android device home screen:
+
+### Installing on iPhone
+1. Open the application in Safari
+2. Tap the Share button (box with up arrow)
+3. Scroll down and tap "Add to Home Screen"
+4. Give it a name and tap "Add"
+
+### Installing on Android
+1. Open the application in Chrome
+2. Tap the menu (three dots)
+3. Tap "Add to Home Screen" or "Install App"
+4. Follow the prompts
+
+Once installed, the app will:
+- Open in full-screen mode (without browser UI)
+- Work offline with cached data
+- Have its own icon on your home screen 

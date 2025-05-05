@@ -27,31 +27,28 @@ RUN echo '#!/bin/bash \n\
 # Create directories with proper permissions \n\
 mkdir -p /app/data /app/logs \n\
 \n\
-# Get group and user IDs from environment or use defaults \n\
+# Get group and user IDs from environment variables or use defaults \n\
 PUID=${PUID:-1000} \n\
 PGID=${PGID:-1000} \n\
 \n\
-# Update user and group IDs if necessary \n\
-if [ "${PUID}" != "1000" ] || [ "${PGID}" != "1000" ]; then \n\
-    echo "Setting custom user/group IDs: ${PUID}:${PGID}" \n\
-    groupmod -o -g ${PGID} weightapp \n\
-    usermod -o -u ${PUID} weightapp \n\
+# Change ownership of the application files if needed \n\
+if [ "$PUID" != "1000" ] || [ "$PGID" != "1000" ]; then \n\
+    echo "Changing ownership of application files to $PUID:$PGID" \n\
+    groupmod -o -g "$PGID" weightapp \n\
+    usermod -o -u "$PUID" weightapp \n\
+    chown -R weightapp:weightapp /app/data /app/logs \n\
+else \n\
+    chown -R weightapp:weightapp /app/data /app/logs \n\
 fi \n\
 \n\
-# Set ownership of application directories \n\
-chown -R weightapp:weightapp /app/data /app/logs \n\
-chmod -R 755 /app/data /app/logs \n\
-\n\
-# Execute command as weightapp user \n\
-exec gosu weightapp "$@" \n\
-' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Run the application as the appropriate user \n\
+exec gosu weightapp python main.py \n\
+' > /entrypoint.sh
 
-# Set environment variable for database location (for persistence)
-ENV DATABASE_PATH=/app/data/weight_tracker.db
+RUN chmod +x /entrypoint.sh
 
-# Expose the port the app runs on
+# Expose the app port
 EXPOSE 8080
 
-# Use the custom entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["python", "main.py"] 
+# Run the entrypoint script
+ENTRYPOINT ["/entrypoint.sh"] 

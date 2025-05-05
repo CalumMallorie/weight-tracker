@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 import os
 import logging
 from logging.handlers import RotatingFileHandler
@@ -35,6 +35,15 @@ def create_app(test_config=None):
     # Create database tables
     with app.app_context():
         services.create_tables()
+    
+    # Add service worker route - needed for PWA
+    @app.route('/static/<path:path>')
+    def send_static(path):
+        return send_from_directory('static', path)
+        
+    @app.route('/manifest.json')
+    def manifest():
+        return send_from_directory('static', 'manifest.json')
     
     return app
 
