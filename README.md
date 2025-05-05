@@ -60,12 +60,12 @@ The application is designed to be Docker-compatible. To build and run with Docke
 
 1. Build the Docker image:
    ```
-   docker build -t weight-tracker .
+   docker build -t calomal/weight-tracker .
    ```
 
 2. Run the container:
    ```
-   docker run -p 8080:8080 -v /path/to/data:/app/data weight-tracker
+   docker run -p 8080:8080 -v /path/to/data:/app/data calomal/weight-tracker
    ```
 
 ### Using Docker Compose
@@ -92,15 +92,15 @@ To run this application on Unraid:
 
 1. Build and push the Docker image to Docker Hub:
    ```
-   docker build -t your-username/weight-tracker .
-   docker push your-username/weight-tracker
+   docker build -t calomal/weight-tracker .
+   docker push calomal/weight-tracker
    ```
 
 2. In the Unraid web interface, go to the "Docker" tab.
 
 3. Click "Add Container" and enter the following information:
    - **Name**: weight-tracker
-   - **Repository**: your-username/weight-tracker
+   - **Repository**: calomal/weight-tracker
    - **Network Type**: Bridge
    - **Port Mappings**:
      - Host Port: 8080 (or your preferred port)

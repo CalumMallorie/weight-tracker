@@ -4,7 +4,7 @@ services:
   weight-tracker:
     build: .
     # Alternatively, use a pre-built image:
-    # image: your-username/weight-tracker
+    # image: calomal/weight-tracker
     ports:
       - "8080:8080"
     volumes:
