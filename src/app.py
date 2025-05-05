@@ -6,6 +6,8 @@ import sys
 from .models import db
 from .routes import main as main_blueprint, api
 from . import services
+from pathlib import Path
+import threading
 
 def create_app(test_config=None):
     """Application factory function"""
@@ -39,6 +41,9 @@ def create_app(test_config=None):
     # Create database tables
     with app.app_context():
         services.create_tables()
+        
+        # Migrate old entries to the new schema
+        services.migrate_old_entries_to_body_mass()
     
     # Add service worker route - needed for PWA
     @app.route('/static/<path:path>')

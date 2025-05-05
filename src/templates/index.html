@@ -136,6 +136,48 @@
             margin: 15px 0;
             color: #2c3e50;
         }
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-group select {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filter-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .category-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .add-category-button {
+            margin-top: 10px;
+        }
+        .reps-field {
+            display: none;
+        }
+        .reps-field.show {
+            display: block;
+        }
         @media (max-width: 768px) {
             .weight-info {
                 flex-direction: column;
@@ -160,6 +202,9 @@
             .container {
                 padding: 15px;
             }
+            .filter-group {
+                flex-direction: column;
+            }
         }
         @media (max-width: 480px) {
             .plot-container {
@@ -179,7 +224,13 @@
     </style>
 </head>
 <body>
-    <h1>Weight Tracker</h1>
+    <div class="nav-links">
+        <h1>Weight Tracker</h1>
+        <div>
+            <a href="{{ url_for('main.get_entries') }}">View All Entries</a> | 
+            <a href="{{ url_for('main.manage_categories') }}">Manage Categories</a>
+        </div>
+    </div>
     
     {% if error %}
     <div class="error-message">
@@ -187,8 +238,49 @@
     </div>
     {% endif %}
     
+    <div class="filter-container">
+        <div class="filter-group">
+            <select id="category-filter" onchange="updateCategory()">
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select id="processing-filter" onchange="updateProcessing()">
+                {% for proc_type in processing_types %}
+                <option value="{{ proc_type.id }}" {% if selected_processing == proc_type.id %}selected{% endif %}>
+                    {{ proc_type.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="time-filters">
+            <a href="{{ url_for('main.index', window='week', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+               class="time-filter {% if time_window == 'week' %}active{% endif %}">
+                Week
+            </a>
+            <a href="{{ url_for('main.index', window='month', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+               class="time-filter {% if time_window == 'month' %}active{% endif %}">
+                Month
+            </a>
+            <a href="{{ url_for('main.index', window='year', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+               class="time-filter {% if time_window == 'year' %}active{% endif %}">
+                Year
+            </a>
+            <a href="{{ url_for('main.index', window='all', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+               class="time-filter {% if time_window == 'all' %}active{% endif %}">
+                All
+            </a>
+        </div>
+    </div>
+    
     <div class="container">
         <h2>Record New Weight</h2>
+        <div class="category-name">{{ selected_category.name if selected_category else 'Body Mass' }}</div>
+        
         <form method="POST">
             <div class="form-group weight-info">
                 <input type="number" step="0.1" name="weight" placeholder="Enter weight" required>
@@ -198,67 +290,90 @@
                 </select>
             </div>
             
-            <div class="form-group">
-                <label for="notes">Notes (optional)</label>
-                <textarea name="notes" id="notes" placeholder="Any notes about this measurement..."></textarea>
+            <div class="form-group reps-field {% if selected_category and not selected_category.is_body_mass %}show{% endif %}">
+                <label for="reps">Number of Repetitions</label>
+                <input type="number" id="reps" name="reps" placeholder="Enter number of reps" min="1" 
+                       {% if selected_category and not selected_category.is_body_mass %}required{% endif %}>
             </div>
+            
+            <input type="hidden" name="category" value="{{ selected_category.id if selected_category else '' }}">
             
             <button type="submit">Save Weight</button>
         </form>
-    </div>
-    
-    <div class="container">
-        <h2>Weight History</h2>
         
-        <div class="time-filters">
-            <a href="{{ url_for('main.index', window='week') }}">
-                <button class="time-filter {% if time_window == 'week' %}active{% endif %}">Last Week</button>
-            </a>
-            <a href="{{ url_for('main.index', window='month') }}">
-                <button class="time-filter {% if time_window == 'month' %}active{% endif %}">Last Month</button>
-            </a>
-            <a href="{{ url_for('main.index', window='year') }}">
-                <button class="time-filter {% if time_window == 'year' %}active{% endif %}">Last Year</button>
-            </a>
-            <a href="{{ url_for('main.index', window='all') }}">
-                <button class="time-filter {% if time_window == 'all' %}active{% endif %}">All Time</button>
+        <div class="action-buttons">
+            <a href="{{ url_for('main.manage_categories') }}" class="add-category-button">
+                <button>Add New Category</button>
             </a>
         </div>
+    </div>
+    
+    {% if entries %}
+    <div class="container">
+        <h2>Weight Data</h2>
         
-        {% if entries %}
-            {% with latest = entries[-1] %}
-                <div class="last-entry">
-                    Latest: {{ latest.weight }} {{ latest.unit }} ({{ latest.created_at.strftime('%Y-%m-%d') }})
-                </div>
-            {% endwith %}
-            
-            {% if plot_json %}
-                <div id="weightPlot" class="plot-container"></div>
-                <script>
-                    var plotData = {{ plot_json|safe }};
-                    Plotly.newPlot('weightPlot', plotData.data, plotData.layout, {
-                        responsive: true,
-                        displayModeBar: false
-                    });
-                    
-                    // Make the plot responsive
-                    window.addEventListener('resize', function() {
-                        Plotly.relayout('weightPlot', {
-                            'xaxis.autorange': true,
-                            'yaxis.autorange': true
-                        });
-                    });
-                </script>
+        {% if entries|length > 0 %}
+        <div class="last-entry">
+            Latest: {{ entries[-1].weight }} {{ entries[-1].unit }}
+            {% if entries[-1].reps and not selected_category.is_body_mass %}
+                ({{ entries[-1].reps }} reps)
             {% endif %}
-            
-            <div class="action-buttons">
-                <a href="{{ url_for('main.get_entries') }}">
-                    <button>Edit Entries</button>
-                </a>
-            </div>
+        </div>
+        
+        <div class="plot-container" id="weight-plot"></div>
+        
+        {% if plot_json %}
+        <script>
+            var plotData = {{ plot_json|safe }};
+            Plotly.newPlot('weight-plot', plotData.data, plotData.layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        </script>
+        {% endif %}
         {% else %}
-            <p>No weight entries recorded yet. Start by adding your first weight above!</p>
+        <p>No entries found. Add your first weight record above.</p>
         {% endif %}
     </div>
+    {% endif %}
+    
+    <script>
+        // Update category and reload page
+        function updateCategory() {
+            const categoryId = document.getElementById('category-filter').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('category', categoryId);
+            window.location = currentUrl.toString();
+        }
+        
+        // Update processing type and reload page
+        function updateProcessing() {
+            const processingType = document.getElementById('processing-filter').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('processing', processingType);
+            window.location = currentUrl.toString();
+        }
+        
+        // Toggle reps field based on category
+        document.getElementById('category-filter').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const categoryName = selectedOption.text;
+            const isBodyMass = categoryName === 'Body Mass';
+            
+            const repsField = document.querySelector('.reps-field');
+            const repsInput = document.getElementById('reps');
+            
+            if (isBodyMass) {
+                repsField.classList.remove('show');
+                repsInput.removeAttribute('required');
+            } else {
+                repsField.classList.add('show');
+                repsInput.setAttribute('required', 'required');
+            }
+            
+            // Update the category name in the form
+            document.querySelector('.category-name').textContent = categoryName;
+        });
+    </script>
 </body>
 </html> 
