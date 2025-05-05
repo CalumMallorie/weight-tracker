@@ -178,6 +178,64 @@
         .reps-field.show {
             display: block;
         }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s ease;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #555;
+        }
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .floating-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        .floating-button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
         @media (max-width: 768px) {
             .weight-info {
                 flex-direction: column;
@@ -204,6 +262,16 @@
             }
             .filter-group {
                 flex-direction: column;
+            }
+            .modal-content {
+                margin-top: 15%;
+                width: 95%;
+            }
+            .floating-button {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
             }
         }
         @media (max-width: 480px) {
@@ -277,46 +345,8 @@
         </div>
     </div>
     
-    <div class="container">
-        <h2>Record New Weight</h2>
-        <div class="category-name">{{ selected_category.name if selected_category else 'Body Mass' }}</div>
-        
-        <form method="POST">
-            <div class="form-group weight-info">
-                <input type="number" step="0.1" name="weight" placeholder="Enter weight" required>
-                <select name="unit">
-                    <option value="kg">kg</option>
-                    <option value="lb">lb</option>
-                </select>
-            </div>
-            
-            <div class="form-group reps-field {% if selected_category and not selected_category.is_body_mass %}show{% endif %}">
-                <label for="reps">Number of Repetitions</label>
-                <input type="number" id="reps" name="reps" placeholder="Enter number of reps" min="1" 
-                       {% if selected_category and not selected_category.is_body_mass %}required{% endif %}>
-            </div>
-            
-            <div class="form-group">
-                <label for="notes">Notes (optional)</label>
-                <textarea id="notes" name="notes" placeholder="Add any notes about this entry"></textarea>
-            </div>
-            
-            <input type="hidden" name="category" value="{{ selected_category.id if selected_category else '' }}">
-            
-            <button type="submit">Save Weight</button>
-        </form>
-        
-        <div class="action-buttons">
-            <a href="{{ url_for('main.manage_categories') }}" class="add-category-button" data-url="categories">
-                <span class="button-style">Add New Category</span>
-            </a>
-        </div>
-    </div>
-    
     {% if entries %}
     <div class="container">
-        <h2>Weight Data</h2>
-        
         {% if entries|length > 0 %}
         <div class="last-entry">
             Latest: {{ entries[-1].weight }} {{ entries[-1].unit }}
@@ -346,10 +376,54 @@
         <div style="padding: 20px; color: #777;">No plot data available to display.</div>
         {% endif %}
         {% else %}
-        <p>No entries found. Add your first weight record above.</p>
+        <p>No entries found. Add your first weight record using the + button.</p>
         {% endif %}
     </div>
     {% endif %}
+    
+    <!-- Floating "+" button to open modal -->
+    <div class="floating-button" id="add-entry-button">+</div>
+    
+    <!-- Modal for adding new entries -->
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-modal">&times;</span>
+            <h2>Record New Entry</h2>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label for="modal-category">Category</label>
+                    <select id="modal-category" name="category" onchange="updateEntryForm()">
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group weight-info">
+                    <input type="number" step="0.1" name="weight" placeholder="Enter weight" required>
+                    <select name="unit">
+                        <option value="kg">kg</option>
+                        <option value="lb">lb</option>
+                    </select>
+                </div>
+                
+                <div class="form-group reps-field" id="modal-reps-field">
+                    <label for="reps">Number of Repetitions</label>
+                    <input type="number" id="reps" name="reps" placeholder="Enter number of reps" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes (optional)</label>
+                    <textarea id="notes" name="notes" placeholder="Add any notes about this entry"></textarea>
+                </div>
+                
+                <button type="submit">Save Entry</button>
+            </form>
+        </div>
+    </div>
     
     <script>
         // Update category and reload page
@@ -368,13 +442,36 @@
             window.location = currentUrl.toString();
         }
         
+        // Modal control
+        const modal = document.getElementById('entry-modal');
+        const addButton = document.getElementById('add-entry-button');
+        const closeButton = document.getElementById('close-modal');
+        
+        addButton.onclick = function() {
+            modal.style.display = 'block';
+            // Set the modal category to match the currently selected category in the graph
+            document.getElementById('modal-category').value = document.getElementById('category-filter').value;
+            updateEntryForm();
+        }
+        
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
         // Toggle reps field based on category
-        document.getElementById('category-filter').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
+        function updateEntryForm() {
+            const categorySelect = document.getElementById('modal-category');
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
             const categoryName = selectedOption.text;
             const isBodyMass = categoryName === 'Body Mass';
             
-            const repsField = document.querySelector('.reps-field');
+            const repsField = document.getElementById('modal-reps-field');
             const repsInput = document.getElementById('reps');
             
             if (isBodyMass) {
@@ -384,30 +481,12 @@
                 repsField.classList.add('show');
                 repsInput.setAttribute('required', 'required');
             }
-            
-            // Update the category name in the form
-            document.querySelector('.category-name').textContent = categoryName;
+        }
+        
+        // Initialize form state
+        document.addEventListener('DOMContentLoaded', function() {
+            updateEntryForm();
         });
-
-        // Add CSS for button-style class
-        document.head.insertAdjacentHTML('beforeend', `
-            <style>
-                .button-style {
-                    background-color: #3498db;
-                    color: white;
-                    padding: 10px 15px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    transition: background-color 0.3s;
-                    display: inline-block;
-                }
-                .button-style:hover {
-                    background-color: #2980b9;
-                }
-            </style>
-        `);
     </script>
 </body>
 </html> 

@@ -358,6 +358,9 @@ def create_weight_plot(
         
         # Prepare data
         data = []
+        default_unit = "kg"  # Default unit for display
+        category_name = None
+        
         for entry in entries:
             try:
                 # Ensure weight is a float
@@ -365,6 +368,14 @@ def create_weight_plot(
                     entry.weight = float(entry.weight)
                 
                 weight_kg = convert_to_kg(entry.weight, entry.unit)
+                
+                # Remember the unit for consistent display
+                if not default_unit:
+                    default_unit = entry.unit
+                
+                # Remember category name
+                if not category_name and hasattr(entry, 'category') and entry.category:
+                    category_name = entry.category.name
                 
                 # Ensure created_at is a datetime object for sorting
                 if isinstance(entry.created_at, str):
@@ -397,15 +408,15 @@ def create_weight_plot(
                 if processing_type == 'volume' and has_reps:
                     # Calculate volume (weight × reps)
                     item['processed_value'] = entry.weight * item['reps']
-                    y_axis_label = 'Volume (weight × reps)'
+                    y_axis_label = f'Volume ({default_unit}·reps)'
                 elif processing_type == 'estimated_1rm' and has_reps:
                     # Calculate estimated 1RM using weight × (1 + reps / 30)
                     item['processed_value'] = entry.weight * (1 + item['reps'] / 30)
-                    y_axis_label = 'Estimated 1RM'
+                    y_axis_label = f'Estimated 1RM ({default_unit})'
                 else:
                     # Default to showing raw weight
                     item['processed_value'] = entry.weight
-                    y_axis_label = 'Weight'
+                    y_axis_label = f'Weight ({default_unit})'
                     
                 data.append(item)
             except Exception as e:
@@ -432,6 +443,22 @@ def create_weight_plot(
         # Y-axis value based on processing type
         y_value = 'processed_value'
         
+        # Determine smart y-axis label
+        is_body_mass = True
+        if category_name:
+            is_body_mass = category_name == 'Body Mass'
+        
+        # Create more specific y-axis label based on the category and processing type
+        if is_body_mass:
+            y_axis_label = f'Body Weight ({default_unit})'
+        elif category_name:
+            if processing_type == 'volume':
+                y_axis_label = f'{category_name} Volume ({default_unit}·reps)'
+            elif processing_type == 'estimated_1rm':
+                y_axis_label = f'{category_name} Est. 1RM ({default_unit})'
+            else:
+                y_axis_label = f'{category_name} Weight ({default_unit})'
+        
         # Create plot
         fig = px.line(
             df, 
@@ -443,11 +470,6 @@ def create_weight_plot(
         
         # Add custom hover text
         hovertemplate = 'Date: %{x}<br>'
-        
-        is_body_mass = True
-        if 'category' in df.columns and len(df) > 0:
-            category_val = df.iloc[0].get('category', '')
-            is_body_mass = category_val == 'Body Mass'
         
         if processing_type in ('volume', 'estimated_1rm') and not is_body_mass and 'reps' in df.columns:
             hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
@@ -474,7 +496,7 @@ def create_weight_plot(
             height=400,
             autosize=True,
             hovermode='closest',
-            title=None,
+            title=None,  # Explicitly remove title
         )
         
         fig.update_xaxes(
