@@ -19,4 +19,12 @@ services:
       - PGID=100
     restart: unless-stopped
     # Add user namespace mapping for UnRAID
-    user: "99:100" 
+    user: "99:100"
+    # Add UnRAID WebUI labels
+    labels:
+      - "org.opencontainers.image.title=Weight Tracker"
+      - "org.opencontainers.image.description=A simple weight tracking application"
+      - "org.opencontainers.image.authors=CalumMallorie"
+      - "org.opencontainers.image.url=https://github.com/calummallorie/weight-tracker"
+      - "io.unraid.webui=http://[IP]:[PORT:8080]"
+      - "io.unraid.icon=https://raw.githubusercontent.com/calummallorie/weight-tracker/main/unraid_icon.png" 

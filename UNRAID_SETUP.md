@@ -36,6 +36,29 @@ If you prefer using the UnRAID Docker UI:
 7. Set the port mapping: 8080:8080
 8. Click "Apply"
 
+## WebUI Integration in UnRAID
+
+The docker-compose.yml file now includes UnRAID-specific labels to properly display the WebUI button in the UnRAID interface:
+
+```yaml
+labels:
+  - "org.opencontainers.image.title=Weight Tracker"
+  - "org.opencontainers.image.description=A simple weight tracking application"
+  - "org.opencontainers.image.authors=CalumMallorie"
+  - "org.opencontainers.image.url=https://github.com/calummallorie/weight-tracker"
+  - "io.unraid.webui=http://[IP]:[PORT:8080]"
+  - "io.unraid.icon=https://raw.githubusercontent.com/calummallorie/weight-tracker/main/unraid_icon.png"
+```
+
+To manually add WebUI support when creating a container through the UnRAID interface:
+
+1. In the "Add Container" form, scroll down to the "Extra Parameters" section
+2. Add the following labels:
+   - Key: `io.unraid.webui` Value: `http://[IP]:[PORT:8080]`
+   - Key: `io.unraid.icon` Value: `https://raw.githubusercontent.com/calummallorie/weight-tracker/main/unraid_icon.png`
+
+After adding these labels, a WebUI button will appear in the Docker container list, which opens the Weight Tracker application in your browser.
+
 ## About the "weight-tracker-weight-tracker" Image
 
 When you use `docker-compose`, it automatically names images as `[directory_name]-[service_name]`. In this case, the directory is "weight-tracker" and the service name in docker-compose.yml is also "weight-tracker", resulting in the "weight-tracker-weight-tracker" image name.
