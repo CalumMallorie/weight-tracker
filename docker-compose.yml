@@ -14,4 +14,9 @@ services:
       - FLASK_DEBUG=false
       - PORT=8080
       - LOG_LEVEL=INFO
-    restart: unless-stopped 
+      # Add user ID and group ID environment variables for UnRAID compatibility
+      - PUID=99
+      - PGID=100
+    restart: unless-stopped
+    # Add user namespace mapping for UnRAID
+    user: "99:100" 
