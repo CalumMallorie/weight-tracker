@@ -29,4 +29,4 @@ EXPOSE 8080
 USER weightapp
 
 # Run the application
-CMD ["python", "app.py"] 
+CMD ["python", "main.py"] 

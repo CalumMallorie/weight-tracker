@@ -4,9 +4,9 @@ import json
 from unittest.mock import patch, MagicMock
 import pandas as pd
 
-import services
-from models import WeightEntry, db
-from app import create_app
+from src import services
+from src.models import WeightEntry, db
+from src.app import create_app
 
 @pytest.fixture
 def app():

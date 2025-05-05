@@ -3,8 +3,8 @@ from flask import url_for
 from unittest.mock import patch, MagicMock
 import json
 
-from app import create_app
-from models import WeightEntry
+from src.app import create_app
+from src.models import WeightEntry
 
 @pytest.fixture
 def app():
@@ -31,8 +31,8 @@ def runner(app):
 
 def test_index_get(client):
     """Test GET request to index page"""
-    with patch('services.get_entries_by_time_window', return_value=[]) as mock_get:
-        with patch('services.create_weight_plot', return_value=None) as mock_plot:
+    with patch('src.services.get_entries_by_time_window', return_value=[]) as mock_get:
+        with patch('src.services.create_weight_plot', return_value=None) as mock_plot:
             response = client.get('/')
             
             assert response.status_code == 200
@@ -42,7 +42,7 @@ def test_index_get(client):
 
 def test_index_post_valid(client):
     """Test POST request to index page with valid data"""
-    with patch('services.save_weight_entry') as mock_save:
+    with patch('src.services.save_weight_entry') as mock_save:
         response = client.post('/', data={
             'weight': '75.5',
             'unit': 'kg',
@@ -55,8 +55,8 @@ def test_index_post_valid(client):
 
 def test_index_post_invalid(client):
     """Test POST request to index page with invalid data"""
-    with patch('services.get_entries_by_time_window', return_value=[]) as mock_get:
-        with patch('services.create_weight_plot', return_value=None) as mock_plot:
+    with patch('src.services.get_entries_by_time_window', return_value=[]) as mock_get:
+        with patch('src.services.create_weight_plot', return_value=None) as mock_plot:
             response = client.post('/', data={
                 'weight': 'invalid',
                 'unit': 'kg',
@@ -70,7 +70,7 @@ def test_index_post_invalid(client):
 
 def test_entries_page(client):
     """Test the entries management page"""
-    with patch('services.get_all_entries', return_value=[]) as mock_get:
+    with patch('src.services.get_all_entries', return_value=[]) as mock_get:
         response = client.get('/entries')
         
         assert response.status_code == 200
@@ -88,7 +88,7 @@ def test_api_entries_get(client):
         'created_at': '2023-01-01 12:00:00'
     }
     
-    with patch('services.get_all_entries', return_value=[mock_entry]) as mock_get:
+    with patch('src.services.get_all_entries', return_value=[mock_entry]) as mock_get:
         response = client.get('/api/entries')
         
         assert response.status_code == 200
@@ -100,7 +100,7 @@ def test_api_entries_get(client):
 
 def test_api_delete_entry(client):
     """Test the API endpoint for deleting an entry"""
-    with patch('services.delete_entry', return_value=True) as mock_delete:
+    with patch('src.services.delete_entry', return_value=True) as mock_delete:
         response = client.delete('/api/entries/1')
         
         assert response.status_code == 200

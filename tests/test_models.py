@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, UTC
-from models import WeightEntry
+from src.models import WeightEntry
 
 def test_weight_entry_creation():
     """Test creating a WeightEntry instance"""
