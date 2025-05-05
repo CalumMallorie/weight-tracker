@@ -10,7 +10,7 @@
   <Overview>A simple weight tracking application that allows you to record and visualize your weight over time.</Overview>
   <Category>Tools: Health</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/weight_icon_small.png</Icon>
+  <Icon>https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/unraid_icon.png</Icon>
   <ExtraParams>--restart=unless-stopped</ExtraParams>
   <Description>A simple weight tracking application that allows you to record and visualize your weight over time. This application helps you track your fitness journey with a clean, easy-to-use interface.</Description>
   
