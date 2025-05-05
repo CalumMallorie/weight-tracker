@@ -4,7 +4,7 @@ import logging
 import plotly
 import plotly.express as px
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from typing import List, Optional, Dict, Any, Tuple
 
 from .models import WeightEntry, WeightCategory, db
@@ -111,17 +111,38 @@ def save_weight_entry(
         reps = 1
     
     logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}, notes: {notes}")
-    entry = WeightEntry(
-        weight=weight, 
-        unit=unit, 
-        category_id=category_id,
-        reps=reps,
-        notes=notes
-    )
-    db.session.add(entry)
-    db.session.commit()
-    logger.info(f"Entry saved with ID: {entry.id}")
-    return entry
+    
+    try:
+        # Check columns exist using introspection to avoid errors with older database schemas
+        inspector = inspect(db.engine)
+        columns = {c["name"] for c in inspector.get_columns("weight_entry")}
+        
+        # Prepare entry data based on available columns
+        entry_data = {
+            'weight': weight,
+            'unit': unit,
+            'category_id': category_id,
+            'created_at': datetime.now(UTC)
+        }
+        
+        # Only include notes if column exists
+        if 'notes' in columns and notes is not None:
+            entry_data['notes'] = notes
+            
+        # Only include reps if column exists
+        if 'reps' in columns and reps is not None:
+            entry_data['reps'] = reps
+            
+        # Create entry and save
+        entry = WeightEntry(**entry_data)
+        db.session.add(entry)
+        db.session.commit()
+        logger.info(f"Entry saved with ID: {entry.id}")
+        return entry
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error saving weight entry: {str(e)}")
+        raise
 
 def delete_entry(entry_id: int) -> bool:
     """Delete an entry by ID"""
@@ -144,26 +165,92 @@ def get_entries_by_time_window(
     try:
         now = datetime.now(UTC)
         
-        # Base query
-        query = WeightEntry.query
+        # Handle potential schema issues by using a safer approach with raw SQL
+        inspector = inspect(db.engine)
+        columns = {c["name"] for c in inspector.get_columns("weight_entry")}
+        
+        # Build query dynamically based on available columns
+        column_list = ["id", "weight", "unit", "category_id", "created_at"]
+        if "notes" in columns:
+            column_list.append("notes")
+        if "reps" in columns:
+            column_list.append("reps")
+            
+        # Create column string for SQL
+        columns_sql = ", ".join(f"weight_entry.{col}" for col in column_list)
+        
+        # Build base query
+        query_parts = [f"SELECT {columns_sql} FROM weight_entry"]
+        params = {}
         
         # Add category filter if provided
+        where_clauses = []
         if category_id is not None:
-            query = query.filter(WeightEntry.category_id == category_id)
+            where_clauses.append("weight_entry.category_id = :category_id")
+            params["category_id"] = category_id
         
         # Add time window filter
         if time_window == 'week':
             start_date = now - timedelta(days=7)
-            query = query.filter(WeightEntry.created_at >= start_date)
+            where_clauses.append("weight_entry.created_at >= :start_date")
+            params["start_date"] = start_date
         elif time_window == 'month':
             start_date = now - timedelta(days=30)
-            query = query.filter(WeightEntry.created_at >= start_date)
+            where_clauses.append("weight_entry.created_at >= :start_date")
+            params["start_date"] = start_date
         elif time_window == 'year':
             start_date = now - timedelta(days=365)
-            query = query.filter(WeightEntry.created_at >= start_date)
+            where_clauses.append("weight_entry.created_at >= :start_date")
+            params["start_date"] = start_date
         
-        # Execute query
-        entries = query.order_by(WeightEntry.created_at).all()
+        # Add WHERE clause if needed
+        if where_clauses:
+            query_parts.append("WHERE " + " AND ".join(where_clauses))
+        
+        # Add ORDER BY
+        query_parts.append("ORDER BY weight_entry.created_at")
+        
+        # Execute raw query
+        sql = " ".join(query_parts)
+        result = db.session.execute(text(sql), params)
+        
+        # Create WeightEntry objects manually
+        entries = []
+        for row in result:
+            created_at_value = row[4]
+            # Ensure created_at is properly formatted if it's a string or convert to string if datetime
+            if isinstance(created_at_value, datetime):
+                formatted_date = created_at_value
+            else:
+                # Try to parse the string to datetime, fallback to using as is
+                try:
+                    formatted_date = datetime.fromisoformat(str(created_at_value).replace('Z', '+00:00'))
+                except (ValueError, TypeError):
+                    formatted_date = str(created_at_value)
+            
+            entry_data = {
+                'id': row[0],
+                'weight': row[1],
+                'unit': row[2],
+                'category_id': row[3],
+                'created_at': formatted_date
+            }
+            
+            # Add optional fields if available
+            col_index = 5
+            if "notes" in columns and len(row) > col_index:
+                entry_data['notes'] = row[col_index]
+                col_index += 1
+            if "reps" in columns and len(row) > col_index:
+                entry_data['reps'] = row[col_index]
+            
+            # Create temporary entry object
+            entry = WeightEntry(**entry_data)
+            
+            # Query category separately to avoid joins which might fail
+            entry.category = WeightCategory.query.get(entry.category_id)
+            entries.append(entry)
+            
         logger.info(f"Retrieved {len(entries)} entries")
         return entries
     except Exception as e:
@@ -176,11 +263,73 @@ def get_all_entries(category_id: Optional[int] = None) -> List[WeightEntry]:
     logger.info(f"Retrieving all weight entries for category_id: {category_id}")
     
     try:
-        query = WeightEntry.query
-        if category_id is not None:
-            query = query.filter(WeightEntry.category_id == category_id)
+        # Use the same approach as get_entries_by_time_window but without time filter
+        inspector = inspect(db.engine)
+        columns = {c["name"] for c in inspector.get_columns("weight_entry")}
         
-        entries = query.order_by(WeightEntry.created_at).all()
+        # Build query dynamically based on available columns
+        column_list = ["id", "weight", "unit", "category_id", "created_at"]
+        if "notes" in columns:
+            column_list.append("notes")
+        if "reps" in columns:
+            column_list.append("reps")
+            
+        # Create column string for SQL
+        columns_sql = ", ".join(f"weight_entry.{col}" for col in column_list)
+        
+        # Build base query
+        query_parts = [f"SELECT {columns_sql} FROM weight_entry"]
+        params = {}
+        
+        # Add category filter if provided
+        if category_id is not None:
+            query_parts.append("WHERE weight_entry.category_id = :category_id")
+            params["category_id"] = category_id
+        
+        # Add ORDER BY
+        query_parts.append("ORDER BY weight_entry.created_at")
+        
+        # Execute raw query
+        sql = " ".join(query_parts)
+        result = db.session.execute(text(sql), params)
+        
+        # Create WeightEntry objects manually
+        entries = []
+        for row in result:
+            created_at_value = row[4]
+            # Ensure created_at is properly formatted if it's a string or convert to string if datetime
+            if isinstance(created_at_value, datetime):
+                formatted_date = created_at_value
+            else:
+                # Try to parse the string to datetime, fallback to using as is
+                try:
+                    formatted_date = datetime.fromisoformat(str(created_at_value).replace('Z', '+00:00'))
+                except (ValueError, TypeError):
+                    formatted_date = str(created_at_value)
+            
+            entry_data = {
+                'id': row[0],
+                'weight': row[1],
+                'unit': row[2],
+                'category_id': row[3],
+                'created_at': formatted_date
+            }
+            
+            # Add optional fields if available
+            col_index = 5
+            if "notes" in columns and len(row) > col_index:
+                entry_data['notes'] = row[col_index]
+                col_index += 1
+            if "reps" in columns and len(row) > col_index:
+                entry_data['reps'] = row[col_index]
+            
+            # Create temporary entry object
+            entry = WeightEntry(**entry_data)
+            
+            # Query category separately to avoid joins which might fail
+            entry.category = WeightCategory.query.get(entry.category_id)
+            entries.append(entry)
+            
         logger.info(f"Retrieved {len(entries)} entries total")
         return entries
     except Exception as e:
@@ -201,7 +350,7 @@ def create_weight_plot(
     processing_type: Optional[str] = None
 ) -> Optional[str]:
     """Create a plotly plot for weight entries with optional processing"""
-    logger.info(f"Creating weight plot for {len(entries)} entries in {time_window} window")
+    logger.info(f"Creating weight plot for {len(entries)} entries in {time_window} window with processing type: {processing_type}")
     try:
         if not entries:
             logger.info("No entries to plot, returning None")
@@ -211,28 +360,50 @@ def create_weight_plot(
         data = []
         for entry in entries:
             try:
+                # Ensure weight is a float
+                if not isinstance(entry.weight, (int, float)):
+                    entry.weight = float(entry.weight)
+                
                 weight_kg = convert_to_kg(entry.weight, entry.unit)
+                
+                # Ensure created_at is a datetime object for sorting
+                if isinstance(entry.created_at, str):
+                    try:
+                        created_at = datetime.fromisoformat(entry.created_at.replace('Z', '+00:00'))
+                    except ValueError:
+                        # If we can't parse it, use current time as fallback
+                        created_at = datetime.now(UTC)
+                else:
+                    created_at = entry.created_at
+                
                 item = {
-                    'date': entry.created_at,
+                    'date': created_at,
                     'weight_kg': weight_kg,
                     'weight_original': entry.weight,
                     'unit': entry.unit,
                     'category': entry.category.name if hasattr(entry, 'category') and entry.category else "Unknown",
                 }
                 
-                # Add reps field if it exists
-                if hasattr(entry, 'reps'):
-                    item['reps'] = entry.reps
-                
-                # Add calculated values if processing type is specified and reps exists
+                # Check if entry has reps attribute and it's a valid number
                 has_reps = hasattr(entry, 'reps') and entry.reps is not None
+                if has_reps:
+                    try:
+                        # Ensure reps is an integer
+                        item['reps'] = int(entry.reps)
+                    except (ValueError, TypeError):
+                        has_reps = False
+                
+                # Add calculated values based on processing type
                 if processing_type == 'volume' and has_reps:
-                    item['processed_value'] = entry.calculate_volume()
+                    # Calculate volume (weight × reps)
+                    item['processed_value'] = entry.weight * item['reps']
                     y_axis_label = 'Volume (weight × reps)'
                 elif processing_type == 'estimated_1rm' and has_reps:
-                    item['processed_value'] = entry.calculate_estimated_1rm()
+                    # Calculate estimated 1RM using weight × (1 + reps / 30)
+                    item['processed_value'] = entry.weight * (1 + item['reps'] / 30)
                     y_axis_label = 'Estimated 1RM'
                 else:
+                    # Default to showing raw weight
                     item['processed_value'] = entry.weight
                     y_axis_label = 'Weight'
                     
@@ -245,7 +416,9 @@ def create_weight_plot(
             logger.info("No valid data points to plot after processing, returning None")
             return None
             
+        # Convert to DataFrame and sort by date
         df = pd.DataFrame(data)
+        df = df.sort_values(by='date')
         
         if len(df) < 2:
             # Add a duplicate point slightly offset if only one point
@@ -257,7 +430,7 @@ def create_weight_plot(
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         
         # Y-axis value based on processing type
-        y_value = 'processed_value' if 'processed_value' in df.columns else 'weight_original'
+        y_value = 'processed_value'
         
         # Create plot
         fig = px.line(
@@ -276,13 +449,11 @@ def create_weight_plot(
             category_val = df.iloc[0].get('category', '')
             is_body_mass = category_val == 'Body Mass'
         
-        if processing_type and not is_body_mass and 'reps' in df.columns:
+        if processing_type in ('volume', 'estimated_1rm') and not is_body_mass and 'reps' in df.columns:
             hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
             hovertemplate += 'Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
             hovertemplate += 'Reps: %{customdata[2]}'
-            customdata_cols = ['weight_original', 'unit']
-            if 'reps' in df.columns:
-                customdata_cols.append('reps')
+            customdata_cols = ['weight_original', 'unit', 'reps']
             fig.update_traces(
                 customdata=df[customdata_cols],
                 hovertemplate=hovertemplate + '<extra></extra>'
@@ -323,9 +494,12 @@ def create_weight_plot(
         
         # Convert to JSON for embedding in HTML
         logger.info("Plot created successfully")
-        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+        plot_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+        return plot_json
     except Exception as e:
         logger.error(f"Error creating plot: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None
 
 def get_available_processing_types() -> List[Dict[str, str]]:

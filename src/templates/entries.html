@@ -192,7 +192,13 @@
             <tbody>
                 {% for entry in entries|sort(attribute='created_at', reverse=True) %}
                 <tr>
-                    <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        {% if entry.created_at is string %}
+                            {{ entry.created_at }}
+                        {% else %}
+                            {{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% endif %}
+                    </td>
                     <td>
                         {{ entry.category.name }}
                         {% if entry.category.is_body_mass %}

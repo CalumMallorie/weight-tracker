@@ -6,6 +6,7 @@ import sys
 from .models import db
 from .routes import main as main_blueprint, api
 from . import services
+from . import migration
 from pathlib import Path
 import threading
 
@@ -38,12 +39,22 @@ def create_app(test_config=None):
     app.register_blueprint(main_blueprint)
     app.register_blueprint(api)
     
-    # Create database tables
+    # Create database tables and migrate if needed
     with app.app_context():
+        # First create tables if needed
         services.create_tables()
+        
+        # Then check and migrate schema if needed
+        migration.check_and_migrate_database()
         
         # Migrate old entries to the new schema
         services.migrate_old_entries_to_body_mass()
+        
+        # Verify schema is consistent
+        schema_verification = migration.verify_model_schema()
+        for table, is_valid in schema_verification.items():
+            if not is_valid:
+                app.logger.warning(f"Schema mismatch detected for table {table}")
     
     # Add service worker route - needed for PWA
     @app.route('/static/<path:path>')

@@ -330,11 +330,20 @@
         {% if plot_json %}
         <script>
             var plotData = {{ plot_json|safe }};
-            Plotly.newPlot('weight-plot', plotData.data, plotData.layout, {
-                responsive: true,
-                displayModeBar: false
-            });
+            console.log("Plot data received:", plotData);
+            try {
+                Plotly.newPlot('weight-plot', plotData.data, plotData.layout, {
+                    responsive: true,
+                    displayModeBar: false
+                });
+                console.log("Plot created successfully");
+            } catch (e) {
+                console.error("Error creating plot:", e);
+                document.getElementById('weight-plot').innerHTML = '<div style="color: red; padding: 20px;">Error creating plot: ' + e.message + '</div>';
+            }
         </script>
+        {% else %}
+        <div style="padding: 20px; color: #777;">No plot data available to display.</div>
         {% endif %}
         {% else %}
         <p>No entries found. Add your first weight record above.</p>
