@@ -25,7 +25,7 @@ COPY . .
 # Create entrypoint script to handle permissions properly
 RUN echo '#!/bin/bash \n\
 # Create directories with proper permissions \n\
-mkdir -p /app/data /app/logs \n\
+mkdir -p /app/data /app/logs /app/instance \n\
 \n\
 # Get group and user IDs from environment variables or use defaults \n\
 PUID=${PUID:-1000} \n\
@@ -36,10 +36,16 @@ if [ "$PUID" != "1000" ] || [ "$PGID" != "1000" ]; then \n\
     echo "Changing ownership of application files to $PUID:$PGID" \n\
     groupmod -o -g "$PGID" weightapp \n\
     usermod -o -u "$PUID" weightapp \n\
-    chown -R weightapp:weightapp /app/data /app/logs \n\
+    chown -R weightapp:weightapp /app/data /app/logs /app/instance \n\
 else \n\
-    chown -R weightapp:weightapp /app/data /app/logs \n\
+    chown -R weightapp:weightapp /app/data /app/logs /app/instance \n\
 fi \n\
+\n\
+# Make sure instance directory has proper permissions \n\
+chmod 755 /app/instance \n\
+\n\
+# Set environment variable for instance path \n\
+export INSTANCE_PATH=/app/instance \n\
 \n\
 # Run the application as the appropriate user \n\
 exec gosu weightapp python main.py \n\

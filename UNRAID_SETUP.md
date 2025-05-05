@@ -1,8 +1,12 @@
 # Setting up Weight Tracker on UnRAID
 
-## Understanding the Permission Issue
+## Understanding the Permission Issues
 
-The error `PermissionError: [Errno 13] Permission denied: '/app/logs/weight_tracker.log'` occurs because the container user doesn't have write permissions to the volume-mounted logs directory on your UnRAID host.
+Two common errors you might see when running the app on UnRAID:
+
+1. `PermissionError: [Errno 13] Permission denied: '/app/logs/weight_tracker.log'` - This occurs when the container user doesn't have write permissions to the volume-mounted logs directory.
+
+2. `PermissionError: [Errno 13] Permission denied: '/app/instance'` - This occurs when the Flask SQLAlchemy instance directory doesn't have proper permissions.
 
 ## Solution
 
@@ -16,35 +20,34 @@ This repository now includes an updated `docker-compose.yml` that sets the user 
 4. Run `docker-compose build --no-cache` to rebuild with the new configuration
 5. Run `docker-compose up -d` to start the container
 
-### Method 2: Manual Configuration in UnRAID Docker UI
+### Method 2: Using the Docker Hub Image (Manual Setup)
 
-If you prefer using the UnRAID Docker UI:
+If you're using the pre-built image from Docker Hub, make sure to set up these volumes and environment variables:
 
-1. In the UnRAID web interface, go to the "Docker" tab
-2. Click "Add Container"
-3. Set the repository to `calomal/weight-tracker` (or your custom image name)
-4. Set a name for the container (e.g., "weight-tracker")
-5. Add the following path mappings:
-   - Host Path: `/path/on/unraid/data` → Container Path: `/app/data`
-   - Host Path: `/path/on/unraid/logs` → Container Path: `/app/logs`
-6. Add the following environment variables:
-   - `PUID`: The user ID you want to run as (typically 99 for nobody on UnRAID)
-   - `PGID`: The group ID you want to run as (typically 100 for users on UnRAID)
-   - `PORT`: 8080
-   - `LOG_LEVEL`: INFO
-   - `FLASK_DEBUG`: false
-7. Set the port mapping: 8080:8080
-8. Click "Apply"
+```bash
+docker run -d \
+  --name=weight-tracker \
+  -p 8080:8080 \
+  -v /mnt/user/appdata/weight-tracker/data:/app/data \
+  -v /mnt/user/appdata/weight-tracker/logs:/app/logs \
+  -v /mnt/user/appdata/weight-tracker/instance:/app/instance \
+  -e PUID=99 \
+  -e PGID=100 \
+  -e INSTANCE_PATH=/app/instance \
+  --restart unless-stopped \
+  calomal/weight-tracker
+```
 
-### Method 3: Using the XML Template (Recommended for UnRAID)
+### Method 3: Create the Directories Manually
 
-The repository now includes a proper XML template for UnRAID:
+If you're still experiencing permission issues, you can create the directories manually with proper permissions:
 
-1. Download the `weight-tracker.xml` file from this repository
-2. In UnRAID, go to the Docker tab and click "Add Container"
-3. At the bottom of the form, click "Upload" and select the `weight-tracker.xml` file
-4. Review the settings and adjust paths if needed
-5. Click "Apply"
+```bash
+mkdir -p /mnt/user/appdata/weight-tracker/{data,logs,instance}
+chmod -R 777 /mnt/user/appdata/weight-tracker/logs
+chmod -R 777 /mnt/user/appdata/weight-tracker/instance
+chown -R 99:100 /mnt/user/appdata/weight-tracker
+```
 
 ## WebUI Integration
 
@@ -67,37 +70,4 @@ The WebUI button should now appear in your Docker list for easy access to the ap
 
 ## About the "weight-tracker-weight-tracker" Image
 
-When you use `docker-compose`, it automatically names images as `[directory_name]-[service_name]`. In this case, the directory is "weight-tracker" and the service name in docker-compose.yml is also "weight-tracker", resulting in the "weight-tracker-weight-tracker" image name.
-
-To use a cleaner name, you can:
-
-1. Set a custom image name in docker-compose.yml:
-   ```yaml
-   services:
-     weight-tracker:
-       build:
-         context: .
-       image: weight-tracker:latest
-   ```
-
-2. Or use `docker build` directly:
-   ```bash
-   docker build -t weight-tracker .
-   ```
-
-## Troubleshooting
-
-If you still encounter permission issues:
-
-1. Verify the host directories exist and have the correct permissions:
-   ```bash
-   mkdir -p /path/on/unraid/data /path/on/unraid/logs
-   chmod -R 777 /path/on/unraid/data /path/on/unraid/logs
-   ```
-   
-2. Try using a different user/group ID by modifying the PUID/PGID values
-
-3. Check the container logs:
-   ```bash
-   docker logs weight-tracker
-   ``` 
+If you see an image called "weight-tracker-weight-tracker" in your Docker images list, this is because Docker Compose uses the directory name as a prefix when building images. You can safely remove this image after building the proper "calomal/weight-tracker" image. 

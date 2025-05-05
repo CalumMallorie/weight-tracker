@@ -10,10 +10,12 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+      - ./instance:/app/instance
     environment:
       - FLASK_DEBUG=false
       - PORT=8080
       - LOG_LEVEL=INFO
+      - INSTANCE_PATH=/app/instance
       # Add user ID and group ID environment variables for UnRAID compatibility
       - PUID=99
       - PGID=100

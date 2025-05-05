@@ -9,7 +9,11 @@ from . import services
 
 def create_app(test_config=None):
     """Application factory function"""
-    app = Flask(__name__)
+    # Set custom instance path to a directory we can write to
+    instance_path = os.environ.get('INSTANCE_PATH', os.path.join(os.getcwd(), 'instance'))
+    os.makedirs(instance_path, exist_ok=True)
+    
+    app = Flask(__name__, instance_path=instance_path)
     
     # Configure the app
     if test_config is None:
