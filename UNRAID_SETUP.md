@@ -46,19 +46,24 @@ The repository now includes a proper XML template for UnRAID:
 4. Review the settings and adjust paths if needed
 5. Click "Apply"
 
-## WebUI Integration in UnRAID
+## WebUI Integration
 
-The proper way to have a WebUI button in UnRAID is through the XML template, which is now included in the repository. When using the template, the WebUI button will automatically appear.
+A proper UnRAID template file (`weight-tracker.xml`) has been created for easy integration with the UnRAID Docker GUI. This template includes:
 
-If you're using docker-compose or creating the container manually, UnRAID will recognize the WebUI through the following label:
+- WebUI button that links to port 8080
+- Custom icon for easy identification
+- Proper volume mappings
+- PUID and PGID environment variables for correct permissions
 
-```yaml
-labels:
-  - "com.unraid.template.webui=http://[IP]:[PORT:8080]/"
-  - "com.unraid.template.icon=https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/unraid_icon.png"
-```
+### To use the template:
 
-The WebUI button will appear in the Docker container list and open the Weight Tracker application in your browser.
+1. In the UnRAID Docker tab, click "Add Container"
+2. Click "Template Repositories" at the bottom
+3. Add this GitHub repository URL
+4. The template will appear in your template list
+5. Fill in any required fields and click "Apply"
+
+The WebUI button should now appear in your Docker list for easy access to the application.
 
 ## About the "weight-tracker-weight-tracker" Image
 
