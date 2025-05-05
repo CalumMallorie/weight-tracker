@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  weight-tracker:
+    build: .
+    # Alternatively, use a pre-built image:
+    # image: your-username/weight-tracker
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - FLASK_DEBUG=false
+      - PORT=8080
+    restart: unless-stopped 
