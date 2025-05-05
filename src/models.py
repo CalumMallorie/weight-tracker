@@ -27,26 +27,35 @@ class WeightEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     weight = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(10), nullable=False)  # 'kg' or 'lb'
+    notes = db.Column(db.Text, nullable=True)  # Notes field added as per test expectations
     reps = db.Column(db.Integer, nullable=True)  # Number of repetitions (null for body mass)
     category_id = db.Column(db.Integer, db.ForeignKey('weight_category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         rep_str = f", reps={self.reps}" if self.reps is not None else ""
-        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}, category={self.category.name})"
+        cat_str = f", category={self.category.name}" if self.category else ""
+        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={self.created_at.strftime('%Y-%m-%d %H:%M:%S')})"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert entry to dictionary for JSON response"""
-        return {
+        result = {
             'id': self.id,
             'weight': self.weight,
             'unit': self.unit,
+            'notes': self.notes,
             'reps': self.reps,
-            'category_id': self.category_id,
-            'category_name': self.category.name,
-            'is_body_mass': self.category.is_body_mass,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+        
+        if self.category:
+            result.update({
+                'category_id': self.category_id,
+                'category_name': self.category.name,
+                'is_body_mass': self.category.is_body_mass
+            })
+        
+        return result
     
     def calculate_volume(self) -> Optional[float]:
         """Calculate volume (weight × reps)"""

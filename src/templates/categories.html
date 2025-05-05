@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weight Categories - Weight Tracker</title>
     
     <!-- PWA metadata -->
@@ -133,8 +133,8 @@
 </head>
 <body>
     <div class="nav-links">
-        <a href="{{ url_for('main.index') }}">← Back to Weight Tracker</a>
-        <a href="{{ url_for('main.get_entries') }}">View All Entries</a>
+        <a href="{{ url_for('main.index') }}" data-url="index">← Back to Weight Tracker</a>
+        <a href="{{ url_for('main.get_entries') }}" data-url="entries">View All Entries</a>
     </div>
     
     <h1>Manage Weight Categories</h1>
@@ -170,7 +170,7 @@
                     {% endif %}
                 </div>
                 {% if not category.is_body_mass %}
-                <button class="btn-danger" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')">Delete</button>
+                <button class="btn-danger delete-category-btn" data-category-id="{{ category.id }}" data-category-name="{{ category.name }}">Delete</button>
                 {% endif %}
             </div>
             {% endfor %}
@@ -181,6 +181,18 @@
     </div>
     
     <script>
+        // Add event listeners to all delete buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.delete-category-btn');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const categoryId = this.getAttribute('data-category-id');
+                    const categoryName = this.getAttribute('data-category-name');
+                    deleteCategory(categoryId, categoryName);
+                });
+            });
+        });
+
         function deleteCategory(id, name) {
             if (confirm(`Are you sure you want to delete the category "${name}" and all its entries?`)) {
                 fetch(`/api/categories/${id}`, {
@@ -205,4 +217,4 @@
         }
     </script>
 </body>
-</html> 
+</html>

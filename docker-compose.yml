@@ -16,12 +16,7 @@ services:
       - PORT=8080
       - LOG_LEVEL=INFO
       - INSTANCE_PATH=/app/instance
-      # Add user ID and group ID environment variables for UnRAID compatibility
-      - PUID=99
-      - PGID=100
     restart: unless-stopped
-    # Add user namespace mapping for UnRAID
-    user: "99:100"
     # Add UnRAID-specific labels for WebUI
     labels:
       - "com.unraid.template.icon=https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/unraid_icon.png"

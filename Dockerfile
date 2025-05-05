@@ -10,8 +10,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user to run the application (default IDs)
-RUN groupadd -r -g 1000 weightapp && useradd -r -u 1000 -g weightapp weightapp
+# Create app user and directories
+RUN mkdir -p /app/data /app/logs /app/instance && \
+    groupadd -r weightapp && \
+    useradd -r -g weightapp weightapp && \
+    chown -R weightapp:weightapp /app/data /app/logs /app/instance
 
 WORKDIR /app
 
@@ -21,34 +24,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY . .
+RUN chown -R weightapp:weightapp /app
 
-# Create entrypoint script to handle permissions properly
+# Create a simplified entrypoint script
 RUN echo '#!/bin/bash \n\
-# Create directories with proper permissions \n\
-mkdir -p /app/data /app/logs /app/instance \n\
-\n\
-# Get group and user IDs from environment variables or use defaults \n\
-PUID=${PUID:-1000} \n\
-PGID=${PGID:-1000} \n\
-\n\
-# Change ownership of the application files if needed \n\
-if [ "$PUID" != "1000" ] || [ "$PGID" != "1000" ]; then \n\
-    echo "Changing ownership of application files to $PUID:$PGID" \n\
-    groupmod -o -g "$PGID" weightapp \n\
-    usermod -o -u "$PUID" weightapp \n\
-    chown -R weightapp:weightapp /app/data /app/logs /app/instance \n\
-else \n\
-    chown -R weightapp:weightapp /app/data /app/logs /app/instance \n\
-fi \n\
-\n\
-# Make sure instance directory has proper permissions \n\
-chmod 755 /app/instance \n\
-\n\
 # Set environment variable for instance path \n\
 export INSTANCE_PATH=/app/instance \n\
 \n\
-# Run the application as the appropriate user \n\
-exec gosu weightapp python main.py \n\
+# Create directories if they don't exist \n\
+mkdir -p /app/data /app/logs /app/instance \n\
+\n\
+# Run the application \n\
+exec python main.py \n\
 ' > /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh

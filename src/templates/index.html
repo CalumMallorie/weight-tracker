@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weight Tracker</title>
     
     <!-- PWA metadata -->
@@ -227,8 +227,8 @@
     <div class="nav-links">
         <h1>Weight Tracker</h1>
         <div>
-            <a href="{{ url_for('main.get_entries') }}">View All Entries</a> | 
-            <a href="{{ url_for('main.manage_categories') }}">Manage Categories</a>
+            <a href="{{ url_for('main.get_entries') }}" data-url="entries">View All Entries</a> | 
+            <a href="{{ url_for('main.manage_categories') }}" data-url="categories">Manage Categories</a>
         </div>
     </div>
     
@@ -259,19 +259,19 @@
         
         <div class="time-filters">
             <a href="{{ url_for('main.index', window='week', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'week' %}active{% endif %}">
+               class="time-filter {% if time_window == 'week' %}active{% endif %}" data-window="week">
                 Week
             </a>
             <a href="{{ url_for('main.index', window='month', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'month' %}active{% endif %}">
+               class="time-filter {% if time_window == 'month' %}active{% endif %}" data-window="month">
                 Month
             </a>
             <a href="{{ url_for('main.index', window='year', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'year' %}active{% endif %}">
+               class="time-filter {% if time_window == 'year' %}active{% endif %}" data-window="year">
                 Year
             </a>
             <a href="{{ url_for('main.index', window='all', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'all' %}active{% endif %}">
+               class="time-filter {% if time_window == 'all' %}active{% endif %}" data-window="all">
                 All
             </a>
         </div>
@@ -296,14 +296,19 @@
                        {% if selected_category and not selected_category.is_body_mass %}required{% endif %}>
             </div>
             
+            <div class="form-group">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" placeholder="Add any notes about this entry"></textarea>
+            </div>
+            
             <input type="hidden" name="category" value="{{ selected_category.id if selected_category else '' }}">
             
             <button type="submit">Save Weight</button>
         </form>
         
         <div class="action-buttons">
-            <a href="{{ url_for('main.manage_categories') }}" class="add-category-button">
-                <button>Add New Category</button>
+            <a href="{{ url_for('main.manage_categories') }}" class="add-category-button" data-url="categories">
+                <span class="button-style">Add New Category</span>
             </a>
         </div>
     </div>
@@ -374,6 +379,26 @@
             // Update the category name in the form
             document.querySelector('.category-name').textContent = categoryName;
         });
+
+        // Add CSS for button-style class
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                .button-style {
+                    background-color: #3498db;
+                    color: white;
+                    padding: 10px 15px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: background-color 0.3s;
+                    display: inline-block;
+                }
+                .button-style:hover {
+                    background-color: #2980b9;
+                }
+            </style>
+        `);
     </script>
 </body>
 </html> 
