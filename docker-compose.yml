@@ -17,6 +17,12 @@ services:
       - LOG_LEVEL=INFO
       - INSTANCE_PATH=/app/instance
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     # Add UnRAID-specific labels for WebUI
     labels:
       - "com.unraid.template.icon=https://raw.githubusercontent.com/CalumMallorie/weight-tracker/main/unraid_icon.png"

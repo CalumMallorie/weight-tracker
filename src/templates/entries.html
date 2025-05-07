@@ -161,6 +161,128 @@
                 font-size: 12px;
             }
         }
+        /* Add styles for edit button and modal */
+        .edit-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        
+        .edit-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close-modal:hover {
+            color: #555;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-group input, 
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .weight-info {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .weight-info input {
+            flex: 2;
+        }
+        
+        .weight-info select {
+            flex: 1;
+        }
+        
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
@@ -220,6 +342,12 @@
                     <td class="hide-mobile">{{ "%.1f"|format(entry.calculate_estimated_1rm()) if entry.calculate_estimated_1rm() else '-' }}</td>
                     <td class="hide-mobile">{{ entry.notes if entry.notes else '-' }}</td>
                     <td>
+                        <button class="edit-btn" data-entry-id="{{ entry.id }}" 
+                           data-weight="{{ entry.weight }}" 
+                           data-unit="{{ entry.unit }}" 
+                           data-category="{{ entry.category_id }}"
+                           data-reps="{{ entry.reps if entry.reps else '' }}"
+                           data-is-body-mass="{{ 'true' if entry.category.is_body_mass else 'false' }}">Edit</button>
                         <button class="delete-btn" data-entry-id="{{ entry.id }}">Delete</button>
                     </td>
                 </tr>
@@ -233,6 +361,50 @@
         {% endif %}
     </div>
     
+    <!-- Edit Entry Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-edit-modal">&times;</span>
+            <h2>Edit Entry</h2>
+            
+            <form id="edit-form">
+                <input type="hidden" id="edit-entry-id">
+                
+                <div class="form-group">
+                    <label for="edit-category">Exercise Type</label>
+                    <select id="edit-category" name="category" onchange="updateEditFields()">
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" 
+                                data-is-body-mass="{% if category.is_body_mass %}true{% else %}false{% endif %}"
+                                data-is-body-weight="{% if category.is_body_weight %}true{% else %}false{% endif %}">
+                            {{ category.name }}{% if category.is_body_mass %} (Body Weight){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div id="edit-weight-field" class="form-group weight-info">
+                    <label for="edit-weight">Weight</label>
+                    <input type="number" id="edit-weight" name="weight" step="0.1" min="0" placeholder="Enter weight" required>
+                    <select id="edit-unit" name="unit">
+                        <option value="kg">kg</option>
+                        <option value="lb">lb</option>
+                    </select>
+                </div>
+                
+                <div id="edit-reps-field" class="form-group">
+                    <label for="edit-reps">Number of Reps</label>
+                    <input type="number" id="edit-reps" name="reps" min="1" placeholder="Enter number of reps">
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="button" id="cancel-edit" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="save-edit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         // Add event listeners to all delete buttons
         document.addEventListener('DOMContentLoaded', function() {
@@ -243,7 +415,127 @@
                     deleteEntry(entryId);
                 });
             });
+            
+            // Add event listeners to all edit buttons
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const entryId = this.getAttribute('data-entry-id');
+                    const weight = this.getAttribute('data-weight');
+                    const unit = this.getAttribute('data-unit');
+                    const categoryId = this.getAttribute('data-category');
+                    const reps = this.getAttribute('data-reps');
+                    const isBodyMass = this.getAttribute('data-is-body-mass') === 'true';
+                    
+                    // Fill the edit form with current values
+                    document.getElementById('edit-entry-id').value = entryId;
+                    document.getElementById('edit-weight').value = weight;
+                    document.getElementById('edit-unit').value = unit;
+                    document.getElementById('edit-category').value = categoryId;
+                    document.getElementById('edit-reps').value = reps;
+                    
+                    // Update form fields based on category type
+                    updateEditFields();
+                    
+                    // Show the modal
+                    document.getElementById('edit-modal').style.display = 'block';
+                });
+            });
+            
+            // Close modal events
+            document.getElementById('close-edit-modal').addEventListener('click', function() {
+                document.getElementById('edit-modal').style.display = 'none';
+            });
+            
+            document.getElementById('cancel-edit').addEventListener('click', function() {
+                document.getElementById('edit-modal').style.display = 'none';
+            });
+            
+            // Handle edit form submission
+            document.getElementById('edit-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const entryId = document.getElementById('edit-entry-id').value;
+                const weight = document.getElementById('edit-weight').value;
+                const unit = document.getElementById('edit-unit').value;
+                const categoryId = document.getElementById('edit-category').value;
+                const reps = document.getElementById('edit-reps').value || null;
+                
+                updateEntry(entryId, weight, unit, categoryId, reps);
+            });
         });
+        
+        // Function to update entry via API
+        function updateEntry(id, weight, unit, categoryId, reps) {
+            const data = {
+                weight: parseFloat(weight),
+                unit: unit,
+                category_id: parseInt(categoryId),
+                reps: reps ? parseInt(reps) : null
+            };
+            
+            fetch(`/api/entries/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to update entry');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Close the modal and reload the page to show updated data
+                document.getElementById('edit-modal').style.display = 'none';
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'An error occurred while updating the entry');
+            });
+        }
+        
+        // Toggle fields based on category for edit form
+        function updateEditFields() {
+            const categorySelect = document.getElementById('edit-category');
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const isBodyMass = selectedOption.getAttribute('data-is-body-mass') === 'true';
+            const isBodyWeight = selectedOption.getAttribute('data-is-body-weight') === 'true';
+            
+            const weightField = document.getElementById('edit-weight-field');
+            const repsField = document.getElementById('edit-reps-field');
+            const weightInput = document.getElementById('edit-weight');
+            const repsInput = document.getElementById('edit-reps');
+            
+            // Reset all fields
+            weightField.style.display = 'block';
+            repsField.style.display = 'block';
+            weightInput.required = true;
+            repsInput.required = true;
+            
+            if (isBodyMass) {
+                // Body Mass: show weight, hide reps
+                repsField.style.display = 'none';
+                repsInput.required = false;
+                repsInput.value = '';
+            } else if (isBodyWeight) {
+                // Body Weight Exercise: hide weight, show reps
+                weightField.style.display = 'none';
+                weightInput.required = false;
+                weightInput.value = '0';  // Set a default value for the backend
+            } else {
+                // Normal Exercise: show both weight and reps
+                weightField.style.display = 'block';
+                repsField.style.display = 'block';
+                weightInput.required = true;
+                repsInput.required = true;
+            }
+        }
 
         function deleteEntry(id) {
             if (confirm('Are you sure you want to delete this entry?')) {

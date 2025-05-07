@@ -1,16 +1,5 @@
 extra goals for this repo:
     * Aim to have full test coverage. If you encounter an error that testing could have prevented, make a test.
-    * Please use branching for continous development and utilise tags sensibly. Don't go overboard as this project only has one developer and one client.
+    * Use branching for continous development and utilise tags sensibly.
+    * After changes, rebuild and run the docker image and query it to make sure it works.
 
-feature goals:
-    * Save what exercise was most recently input ✓
-    * Support for body weight exercise flag ✓
-    * Fix dates not showing on mobile ✓
-    * Add weight and number of reps input on main screen
-    * Allow edit entries
-    * Add buttons for manage categories and see all entries
-    * Remove all notes functionality, remove it from the database, delete it ✓
-    * Add rate limit to user interaction requests to prevent duplicate entries during internet issues
-    * Implement click and drag wheel for selecting exercise
-    * Only select the thing being plotted at the graph bit
-    * Replace "none" (raw weight) with "raw weight" in the UI

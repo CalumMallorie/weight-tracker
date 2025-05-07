@@ -11,13 +11,14 @@ def format_date(dt: datetime) -> str:
 class WeightCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
-    is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass
+    is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass (just weight, no reps)
+    is_body_weight = db.Column(db.Boolean, default=False)  # For body weight exercises (just reps, no weight)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
     last_used_at = db.Column(db.DateTime, nullable=True)  # Track when the category was last used
     entries = db.relationship('WeightEntry', backref='category', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
-        return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass})"
+        return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass}, is_body_weight={self.is_body_weight})"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert category to dictionary for JSON response"""
@@ -25,6 +26,7 @@ class WeightCategory(db.Model):
             'id': self.id,
             'name': self.name,
             'is_body_mass': self.is_body_mass,
+            'is_body_weight': self.is_body_weight,
             'created_at': format_date(self.created_at),
             'last_used_at': format_date(self.last_used_at) if self.last_used_at else None
         }
