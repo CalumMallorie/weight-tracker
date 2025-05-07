@@ -4,6 +4,10 @@ from typing import Dict, Any, Optional
 
 db = SQLAlchemy()
 
+def format_date(dt: datetime) -> str:
+    """Format a datetime object consistently across the app"""
+    return dt.strftime('%Y-%m-%d')
+
 class WeightCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
@@ -21,8 +25,8 @@ class WeightCategory(db.Model):
             'id': self.id,
             'name': self.name,
             'is_body_mass': self.is_body_mass,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'last_used_at': self.last_used_at.strftime('%Y-%m-%d %H:%M:%S') if self.last_used_at else None
+            'created_at': format_date(self.created_at),
+            'last_used_at': format_date(self.last_used_at) if self.last_used_at else None
         }
 
 class WeightEntry(db.Model):
@@ -36,7 +40,7 @@ class WeightEntry(db.Model):
     def __repr__(self) -> str:
         rep_str = f", reps={self.reps}" if self.reps is not None else ""
         cat_str = f", category={self.category.name}" if self.category else ""
-        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={self.created_at.strftime('%Y-%m-%d %H:%M:%S')})"
+        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={format_date(self.created_at)})"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert entry to dictionary for JSON response"""
@@ -45,7 +49,7 @@ class WeightEntry(db.Model):
             'weight': self.weight,
             'unit': self.unit,
             'reps': self.reps,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': format_date(self.created_at)
         }
         
         if self.category:

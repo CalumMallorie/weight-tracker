@@ -141,6 +141,15 @@
             .filter-group {
                 flex-direction: column;
             }
+            /* Hide less important columns on mobile */
+            .hide-mobile {
+                display: none;
+            }
+            /* Make date more compact on mobile */
+            .date-mobile {
+                font-size: 14px;
+                white-space: nowrap;
+            }
         }
         @media (max-width: 480px) {
             th, td {
@@ -182,21 +191,21 @@
                     <th>Date</th>
                     <th>Category</th>
                     <th>Weight</th>
-                    <th>Reps</th>
-                    <th>Volume</th>
-                    <th>Est. 1RM</th>
-                    <th>Notes</th>
+                    <th class="hide-mobile">Reps</th>
+                    <th class="hide-mobile">Volume</th>
+                    <th class="hide-mobile">Est. 1RM</th>
+                    <th class="hide-mobile">Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for entry in entries|sort(attribute='created_at', reverse=True) %}
                 <tr>
-                    <td>
+                    <td class="date-mobile">
                         {% if entry.created_at is string %}
-                            {{ entry.created_at }}
+                            {{ entry.created_at.split(' ')[0] }}
                         {% else %}
-                            {{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            {{ entry.created_at.strftime('%Y-%m-%d') }}
                         {% endif %}
                     </td>
                     <td>
@@ -206,10 +215,10 @@
                         {% endif %}
                     </td>
                     <td>{{ entry.weight }} {{ entry.unit }}</td>
-                    <td>{{ entry.reps if entry.reps else '-' }}</td>
-                    <td>{{ "%.1f"|format(entry.calculate_volume()) if entry.reps else '-' }}</td>
-                    <td>{{ "%.1f"|format(entry.calculate_estimated_1rm()) if entry.reps else '-' }}</td>
-                    <td>{{ entry.notes if entry.notes else '-' }}</td>
+                    <td class="hide-mobile">{{ entry.reps if entry.reps else '-' }}</td>
+                    <td class="hide-mobile">{{ "%.1f"|format(entry.calculate_volume()) if entry.calculate_volume() else '-' }}</td>
+                    <td class="hide-mobile">{{ "%.1f"|format(entry.calculate_estimated_1rm()) if entry.calculate_estimated_1rm() else '-' }}</td>
+                    <td class="hide-mobile">{{ entry.notes if entry.notes else '-' }}</td>
                     <td>
                         <button class="delete-btn" data-entry-id="{{ entry.id }}">Delete</button>
                     </td>

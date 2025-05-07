@@ -246,41 +246,30 @@
             transform: scale(1.05);
         }
         @media (max-width: 768px) {
-            .weight-info {
-                flex-direction: column;
-                gap: 5px;
-            }
-            .time-filters {
-                justify-content: center;
-            }
-            .plot-container {
-                height: 350px;
-            }
-            .time-filter {
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            h1, h2 {
-                font-size: 1.5rem;
-            }
-            .last-entry {
-                font-size: 18px;
+            body {
+                padding: 10px;
             }
             .container {
                 padding: 15px;
             }
+            h1, h2 {
+                font-size: 1.5rem;
+            }
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
             .filter-group {
                 flex-direction: column;
             }
-            .modal-content {
-                margin-top: 15%;
-                width: 95%;
+            /* Make date more compact on mobile */
+            .date-mobile {
+                font-size: 14px;
+                white-space: nowrap;
             }
-            .floating-button {
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
+            /* Adjust plot height for mobile */
+            .plot-container {
+                height: 300px;
             }
         }
         @media (max-width: 480px) {
@@ -358,6 +347,7 @@
     <div class="container">
         {% if entries|length > 0 %}
         <div class="last-entry">
+            Last Entry: 
             Latest: {{ entries[-1].weight }} {{ entries[-1].unit }}
             {% if entries[-1].reps and not selected_category.is_body_mass %}
                 ({{ entries[-1].reps }} reps)

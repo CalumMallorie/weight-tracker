@@ -578,4 +578,63 @@ def migrate_old_entries_to_body_mass() -> None:
             logger.info("No entries found that need migration")
     except Exception as e:
         logger.error(f"Error during migration: {str(e)}")
+        logger.info("Continuing with application startup despite migration error")
+
+def format_date(dt: datetime) -> str:
+    """Format a datetime object consistently across the app"""
+    return dt.strftime('%Y-%m-%d')
+
+class WeightCategory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    last_used_at = db.Column(db.DateTime, nullable=True)  # Track when the category was last used
+    entries = db.relationship('WeightEntry', backref='category', lazy=True, cascade="all, delete-orphan")
+    
+    def __repr__(self) -> str:
+        return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass})"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert category to dictionary for JSON response"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_body_mass': self.is_body_mass,
+            'created_at': format_date(self.created_at),
+            'last_used_at': format_date(self.last_used_at) if self.last_used_at else None
+        }
+
+class WeightEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    weight = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(10), nullable=False)  # 'kg' or 'lb'
+    reps = db.Column(db.Integer, nullable=True)  # Number of repetitions (null for body mass)
+    category_id = db.Column(db.Integer, db.ForeignKey('weight_category.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+
+    def __repr__(self) -> str:
+        rep_str = f", reps={self.reps}" if self.reps is not None else ""
+        cat_str = f", category={self.category.name}" if self.category else ""
+        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={format_date(self.created_at)})"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert entry to dictionary for JSON response"""
+        result = {
+            'id': self.id,
+            'weight': self.weight,
+            'unit': self.unit,
+            'reps': self.reps,
+            'created_at': format_date(self.created_at)
+        }
+        
+        if self.category:
+            result.update({
+                'category_id': self.category_id,
+                'category_name': self.category.name,
+                'is_body_mass': self.category.is_body_mass
+            })
+        
+        return result
+
         logger.info("Continuing with application startup despite migration error") 
