@@ -62,7 +62,7 @@ def test_create_weight_plot_empty():
     result = services.create_weight_plot([], 'month')
     assert result is None
 
-def test_create_weight_plot_single_entry(mock_entry):
+def test_create_weight_plot_single_entry(mock_entry, app_context):
     """Test creating a plot with a single entry using a simple approach"""
     # Use a simple approach to avoid complex mocking
     with patch('pandas.DataFrame') as mock_df, \
@@ -85,7 +85,7 @@ def test_create_weight_plot_single_entry(mock_entry):
         assert mock_dumps.called
         assert isinstance(result, str)
 
-def test_create_weight_plot_multiple_entries(mock_entries):
+def test_create_weight_plot_multiple_entries(mock_entries, app_context):
     """Test creating a plot with multiple entries"""
     with patch('pandas.DataFrame') as mock_df:
         # Mock the DataFrame operations
