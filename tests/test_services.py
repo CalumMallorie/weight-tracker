@@ -42,6 +42,15 @@ def mock_entry():
     entry.weight = 75.5
     entry.unit = 'kg'
     entry.created_at = datetime(2023, 1, 1, 12, 0, 0)
+    
+    # Add mock category
+    category = MagicMock()
+    category.name = "Test Category"
+    category.is_body_mass = False
+    category.is_body_weight = False
+    entry.category = category
+    entry.category_id = 1
+    
     return entry
 
 @pytest.fixture
@@ -54,6 +63,15 @@ def mock_entries():
         entry.weight = 75.0 + i
         entry.unit = 'kg'
         entry.created_at = datetime(2023, 1, 1, 12, 0, 0) + timedelta(days=i)
+        
+        # Add mock category
+        category = MagicMock()
+        category.name = f"Test Category {i+1}"
+        category.is_body_mass = False
+        category.is_body_weight = False
+        entry.category = category
+        entry.category_id = i + 1
+        
         entries.append(entry)
     return entries
 
