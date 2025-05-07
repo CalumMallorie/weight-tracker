@@ -9,14 +9,16 @@ from src import services
 from src.models import WeightEntry, db
 from src.app import create_app
 
+# Create a global Flask app for testing
+test_app = create_app({
+    'TESTING': True,
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+})
+
 @pytest.fixture
 def app():
     """Create a Flask app for testing"""
-    app = create_app({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-    })
-    return app
+    return test_app
 
 @pytest.fixture
 def app_context(app):
@@ -34,10 +36,9 @@ def test_convert_to_kg():
     result = services.convert_to_kg(50, 'kg')
     assert result == 50
 
-@pytest.fixture
-def mock_entry():
-    """Create a mock weight entry"""
-    entry = MagicMock(spec=WeightEntry)
+def create_mock_entry():
+    """Helper function to create a mock entry without using spec"""
+    entry = MagicMock()
     entry.id = 1
     entry.weight = 75.5
     entry.unit = 'kg'
@@ -53,12 +54,11 @@ def mock_entry():
     
     return entry
 
-@pytest.fixture
-def mock_entries():
-    """Create a list of mock weight entries"""
+def create_mock_entries():
+    """Helper function to create mock entries without using spec"""
     entries = []
     for i in range(3):
-        entry = MagicMock(spec=WeightEntry)
+        entry = MagicMock()
         entry.id = i + 1
         entry.weight = 75.0 + i
         entry.unit = 'kg'
@@ -80,8 +80,10 @@ def test_create_weight_plot_empty():
     result = services.create_weight_plot([], 'month')
     assert result is None
 
-def test_create_weight_plot_single_entry(mock_entry, app_context):
+def test_create_weight_plot_single_entry(app_context):
     """Test creating a plot with a single entry using a simple approach"""
+    mock_entry = create_mock_entry()
+    
     # Use a simple approach to avoid complex mocking
     with patch('pandas.DataFrame') as mock_df, \
          patch('plotly.express.line') as mock_line, \
@@ -103,8 +105,10 @@ def test_create_weight_plot_single_entry(mock_entry, app_context):
         assert mock_dumps.called
         assert isinstance(result, str)
 
-def test_create_weight_plot_multiple_entries(mock_entries, app_context):
+def test_create_weight_plot_multiple_entries(app_context):
     """Test creating a plot with multiple entries"""
+    mock_entries = create_mock_entries()
+    
     with patch('pandas.DataFrame') as mock_df:
         # Mock the DataFrame operations
         mock_df_instance = MagicMock()
