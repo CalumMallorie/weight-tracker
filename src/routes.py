@@ -146,11 +146,12 @@ def manage_categories():
     if request.method == 'POST':
         # Handle category creation
         name = request.form.get('name', '').strip()
+        is_body_weight = request.form.get('is_body_weight') == 'on'
         
         if name:
             try:
-                services.get_or_create_category(name)
-                logger.info(f"Category '{name}' created/updated successfully")
+                services.get_or_create_category(name, is_body_mass=is_body_weight)
+                logger.info(f"Category '{name}' created/updated successfully (body weight: {is_body_weight})")
             except Exception as e:
                 logger.error(f"Failed to create category: {str(e)}")
                 return render_template(
@@ -197,19 +198,17 @@ def api_categories():
 def api_create_category():
     """API endpoint to create a new category"""
     data = request.json
+    name = data.get('name', '').strip()
+    is_body_weight = data.get('is_body_weight', False)
     
-    if not data or 'name' not in data:
-        return jsonify({'error': 'Name is required'}), 400
+    if name:
+        try:
+            category = services.get_or_create_category(name, is_body_mass=is_body_weight)
+            return jsonify(category.to_dict())
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
     
-    name = data['name'].strip()
-    if not name:
-        return jsonify({'error': 'Name cannot be empty'}), 400
-    
-    try:
-        category = services.get_or_create_category(name)
-        return jsonify(category.to_dict()), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'error': 'Name is required'}), 400
 
 @api.route('/categories/<int:category_id>', methods=['DELETE'])
 def api_delete_category(category_id):
