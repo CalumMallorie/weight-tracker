@@ -3,6 +3,9 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV INSTANCE_PATH=/app/instance
+ENV PORT=8080
+ENV LOG_LEVEL=INFO
 
 # Install needed packages
 RUN apt-get update && \
@@ -18,30 +21,22 @@ RUN mkdir -p /app/data /app/logs /app/instance && \
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies first (better caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY . .
+
+# Copy migration script
+COPY migrate_and_start.sh /migrate_and_start.sh
+RUN chmod +x /migrate_and_start.sh
+
+# Set correct permissions
 RUN chown -R weightapp:weightapp /app
-
-# Create a simplified entrypoint script
-RUN echo '#!/bin/bash \n\
-# Set environment variable for instance path \n\
-export INSTANCE_PATH=/app/instance \n\
-\n\
-# Create directories if they don't exist \n\
-mkdir -p /app/data /app/logs /app/instance \n\
-\n\
-# Run the application \n\
-exec python main.py \n\
-' > /entrypoint.sh
-
-RUN chmod +x /entrypoint.sh
 
 # Expose the app port
 EXPOSE 8080
 
 # Run the entrypoint script
-ENTRYPOINT ["/entrypoint.sh"] 
+ENTRYPOINT ["/migrate_and_start.sh"] 

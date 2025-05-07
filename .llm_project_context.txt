@@ -1,2 +1,5 @@
 extra goals for this repo:
     * Aim to have full test coverage. If you encounter an error that testing could have prevented, make a test.
+    * Use branching for continous development and utilise tags sensibly.
+    * After changes, rebuild and run the docker image and query it to make sure it works.
+

@@ -82,25 +82,6 @@
         .btn-danger:hover {
             background-color: #c0392b;
         }
-        .time-filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .time-filter {
-            padding: 8px 16px;
-            background-color: #ecf0f1;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #7f8c8d;
-        }
-        .time-filter.active {
-            background-color: #3498db;
-            color: white;
-        }
         .error-message {
             color: #e74c3c;
             padding: 10px;
@@ -111,7 +92,7 @@
         .action-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .weight-info {
             display: flex;
@@ -136,26 +117,19 @@
             margin: 15px 0;
             color: #2c3e50;
         }
-        .filter-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .filter-group select {
-            flex: 1;
-            min-width: 150px;
-        }
-        .filter-container {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
         .nav-links {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-links h1 {
+            margin: 0;
+            color: #2c3e50;
         }
         .nav-links a {
             color: #3498db;
@@ -178,102 +152,230 @@
         .reps-field.show {
             display: block;
         }
+        .body-weight-badge {
+            display: inline-block;
+            background-color: #2ecc71;
+            color: white;
+            font-size: 12px;
+            padding: 3px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+        
+        /* Plot settings styles */
+        .plot-settings {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        #processing-filter {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        /* Time filters */
+        .time-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .time-filter {
+            padding: 8px 16px;
+            background-color: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            text-decoration: none;
+            flex: 1;
+            text-align: center;
+            min-width: 60px;
+            transition: all 0.2s;
+        }
+        
+        .time-filter:hover {
+            background-color: #d5dbdb;
+        }
+        
+        .time-filter.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        /* Styles for entry form */
+        .inline-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .save-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .save-button:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Button styles */
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white !important;
+            border: none;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            border-radius: 4px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #2ecc71;
+            color: white !important;
+            border: none;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            border-radius: 4px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #27ae60;
+        }
+        
         /* Modal styles */
-        .modal {
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            overflow: auto;
-        }
-        .modal-content {
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 500px;
-            animation: modalSlideIn 0.3s ease;
-        }
-        .close-modal {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-modal:hover {
-            color: #555;
-        }
-        @keyframes modalSlideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .floating-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #3498db;
-            color: white;
-            display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .modal-title {
+            margin: 0;
+            font-size: 20px;
+            color: #2c3e50;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
             font-size: 24px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            color: #7f8c8d;
             cursor: pointer;
-            z-index: 100;
-            transition: all 0.3s ease;
+            padding: 0;
         }
-        .floating-button:hover {
-            background-color: #2980b9;
-            transform: scale(1.05);
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
         }
+        
+        /* Responsive styles */
         @media (max-width: 768px) {
-            .weight-info {
-                flex-direction: column;
-                gap: 5px;
-            }
-            .time-filters {
-                justify-content: center;
-            }
-            .plot-container {
-                height: 350px;
-            }
-            .time-filter {
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            h1, h2 {
-                font-size: 1.5rem;
-            }
-            .last-entry {
-                font-size: 18px;
+            body {
+                padding: 10px;
             }
             .container {
                 padding: 15px;
             }
-            .filter-group {
+            h1, h2 {
+                font-size: 1.5rem;
+            }
+            .nav-links {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .form-row {
                 flex-direction: column;
             }
-            .modal-content {
-                margin-top: 15%;
-                width: 95%;
+            /* Make date more compact on mobile */
+            .date-mobile {
+                font-size: 14px;
+                white-space: nowrap;
             }
-            .floating-button {
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
+            /* Adjust plot height for mobile */
+            .plot-container {
+                height: 300px;
+            }
+            .action-buttons {
+                margin-top: 15px;
+                width: 100%;
+            }
+            .btn {
+                padding: 10px;
+                text-align: center;
+                flex: 1;
             }
         }
+        
         @media (max-width: 480px) {
             .plot-container {
                 height: 300px;
@@ -289,14 +391,58 @@
                 font-size: 12px;
             }
         }
+        
+        /* Form row specific styles */
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        /* Improved input styles */
+        .input-with-unit {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .input-with-unit input {
+            flex: 2;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+        }
+        
+        .input-with-unit select {
+            flex: 1;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-left: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+
+        .number-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
     <div class="nav-links">
         <h1>Weight Tracker</h1>
-        <div>
-            <a href="{{ url_for('main.get_entries') }}" data-url="entries">View All Entries</a> | 
-            <a href="{{ url_for('main.manage_categories') }}" data-url="categories">Manage Categories</a>
+        <div class="action-buttons">
+            <button id="track-body-weight-btn" class="btn btn-secondary">Track Body Weight</button>
+            <a href="{{ url_for('main.get_entries') }}" data-url="entries" class="btn btn-primary">View All Entries</a>
+            <a href="{{ url_for('main.manage_categories') }}" data-url="categories" class="btn btn-primary">Manage Categories</a>
         </div>
     </div>
     
@@ -306,49 +452,128 @@
     </div>
     {% endif %}
     
-    <div class="filter-container">
-        <div class="filter-group">
-            <select id="category-filter" onchange="updateCategory()">
-                {% for category in categories %}
-                <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
-                    {{ category.name }}
-                </option>
-                {% endfor %}
-            </select>
+    <!-- Body Weight Modal -->
+    <div id="body-weight-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Track Body Weight</h3>
+                <button class="close-button" onclick="closeBodyWeightModal()">&times;</button>
+            </div>
             
-            <select id="processing-filter" onchange="updateProcessing()">
-                {% for proc_type in processing_types %}
-                <option value="{{ proc_type.id }}" {% if selected_processing == proc_type.id %}selected{% endif %}>
-                    {{ proc_type.name }}
-                </option>
-                {% endfor %}
-            </select>
+            {% if last_body_mass_entry %}
+            <div style="margin-bottom: 15px; text-align: center; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+                <div style="font-size: 12px; color: #7f8c8d;">Last recorded weight</div>
+                <div style="font-size: 18px; font-weight: 600; color: #2c3e50;">
+                    {{ last_body_mass_entry.weight }} {{ last_body_mass_entry.unit }}
+                </div>
+                <div style="font-size: 12px; color: #7f8c8d;">
+                    {{ last_body_mass_entry.created_at }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="POST" id="body-weight-form" action="{{ url_for('main.index') }}">
+                <input type="hidden" name="category" value="{{ body_mass_category_id }}">
+                
+                <div class="form-group weight-info">
+                    <label for="body-weight">Weight</label>
+                    <input type="number" id="body-weight" name="weight" step="0.1" min="0" placeholder="Enter weight" required>
+                    <select id="body-weight-unit" name="unit">
+                        <option value="kg">kg</option>
+                        <option value="lb">lb</option>
+                    </select>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeBodyWeightModal()">Cancel</button>
+                    <button type="submit" class="save-button">Save</button>
+                </div>
+            </form>
         </div>
-        
-        <div class="time-filters">
-            <a href="{{ url_for('main.index', window='week', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'week' %}active{% endif %}" data-window="week">
-                Week
-            </a>
-            <a href="{{ url_for('main.index', window='month', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'month' %}active{% endif %}" data-window="month">
-                Month
-            </a>
-            <a href="{{ url_for('main.index', window='year', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'year' %}active{% endif %}" data-window="year">
-                Year
-            </a>
-            <a href="{{ url_for('main.index', window='all', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
-               class="time-filter {% if time_window == 'all' %}active{% endif %}" data-window="all">
-                All
-            </a>
-        </div>
+    </div>
+    
+    <!-- Entry Form -->
+    <div class="container">
+        <form method="POST" class="inline-form" id="quick-entry-form">
+            <div class="form-group">
+                <label for="main-category">Exercise Type</label>
+                <select id="main-category" name="category" onchange="updateFormFields(); updateCategory();" class="form-select">
+                    {% for category in categories %}
+                    {% if not category.is_body_mass %}
+                    <option value="{{ category.id }}" 
+                            data-is-body-mass="{% if category.is_body_mass %}true{% else %}false{% endif %}"
+                            data-is-body-weight="{% if category.is_body_weight %}true{% else %}false{% endif %}"
+                            {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div id="weight-field" class="form-group">
+                    <label for="main-weight">Weight</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="main-weight" name="weight" step="0.1" min="0" placeholder="Enter weight" required>
+                        <select id="main-unit" name="unit">
+                            <option value="kg">kg</option>
+                            <option value="lb">lb</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="main-reps-field" class="form-group reps-field show">
+                    <label for="main-reps">Reps</label>
+                    <input type="number" id="main-reps" name="reps" min="1" placeholder="Reps" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="save-button" id="save-entry-button">Save Entry</button>
+        </form>
     </div>
     
     {% if entries %}
     <div class="container">
         {% if entries|length > 0 %}
+        <!-- Plot Settings -->
+        <div class="plot-settings">
+            <label for="processing-filter">Plot Type:</label>
+            <select id="processing-filter" onchange="updateProcessing()">
+                {% if body_mass_category_id %}
+                <option value="body_mass" {% if selected_category and selected_category.is_body_mass %}selected{% endif %}>
+                    Body Weight
+                </option>
+                {% endif %}
+                {% for proc_type in processing_types %}
+                <option value="{{ proc_type.id }}" {% if selected_processing == proc_type.id and (not selected_category or not selected_category.is_body_mass) %}selected{% endif %}>
+                    {{ proc_type.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <div class="time-filters">
+                <a href="{{ url_for('main.index', window='week', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+                   class="time-filter {% if time_window == 'week' %}active{% endif %}" data-window="week">
+                    Week
+                </a>
+                <a href="{{ url_for('main.index', window='month', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+                   class="time-filter {% if time_window == 'month' %}active{% endif %}" data-window="month">
+                    Month
+                </a>
+                <a href="{{ url_for('main.index', window='year', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+                   class="time-filter {% if time_window == 'year' %}active{% endif %}" data-window="year">
+                    Year
+                </a>
+                <a href="{{ url_for('main.index', window='all', category=selected_category.id if selected_category else None, processing=selected_processing) }}" 
+                   class="time-filter {% if time_window == 'all' %}active{% endif %}" data-window="all">
+                    All
+                </a>
+            </div>
+        </div>
+    
         <div class="last-entry">
+            Last Entry: 
             Latest: {{ entries[-1].weight }} {{ entries[-1].unit }}
             {% if entries[-1].reps and not selected_category.is_body_mass %}
                 ({{ entries[-1].reps }} reps)
@@ -376,59 +601,15 @@
         <div style="padding: 20px; color: #777;">No plot data available to display.</div>
         {% endif %}
         {% else %}
-        <p>No entries found. Add your first weight record using the + button.</p>
+        <p>No entries found. Add your first record using the form above.</p>
         {% endif %}
     </div>
     {% endif %}
     
-    <!-- Floating "+" button to open modal -->
-    <div class="floating-button" id="add-entry-button">+</div>
-    
-    <!-- Modal for adding new entries -->
-    <div id="entry-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="close-modal">&times;</span>
-            <h2>Record New Entry</h2>
-            
-            <form method="POST">
-                <div class="form-group">
-                    <label for="modal-category">Category</label>
-                    <select id="modal-category" name="category" onchange="updateEntryForm()">
-                        {% for category in categories %}
-                        <option value="{{ category.id }}" {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group weight-info">
-                    <input type="number" step="0.1" name="weight" placeholder="Enter weight" required>
-                    <select name="unit">
-                        <option value="kg">kg</option>
-                        <option value="lb">lb</option>
-                    </select>
-                </div>
-                
-                <div class="form-group reps-field" id="modal-reps-field">
-                    <label for="reps">Number of Repetitions</label>
-                    <input type="number" id="reps" name="reps" placeholder="Enter number of reps" min="1">
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">Notes (optional)</label>
-                    <textarea id="notes" name="notes" placeholder="Add any notes about this entry"></textarea>
-                </div>
-                
-                <button type="submit">Save Entry</button>
-            </form>
-        </div>
-    </div>
-    
     <script>
         // Update category and reload page
         function updateCategory() {
-            const categoryId = document.getElementById('category-filter').value;
+            const categoryId = document.getElementById('main-category').value;
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('category', categoryId);
             window.location = currentUrl.toString();
@@ -438,54 +619,103 @@
         function updateProcessing() {
             const processingType = document.getElementById('processing-filter').value;
             const currentUrl = new URL(window.location);
-            currentUrl.searchParams.set('processing', processingType);
+            
+            if (processingType === 'body_mass') {
+                // For body mass, switch to body mass category
+                currentUrl.searchParams.set('category', '{{ body_mass_category_id }}');
+                currentUrl.searchParams.set('processing', 'none');
+            } else {
+                // Keep current category but update processing type
+                currentUrl.searchParams.set('processing', processingType);
+            }
+            
             window.location = currentUrl.toString();
         }
         
-        // Modal control
-        const modal = document.getElementById('entry-modal');
-        const addButton = document.getElementById('add-entry-button');
-        const closeButton = document.getElementById('close-modal');
-        
-        addButton.onclick = function() {
-            modal.style.display = 'block';
-            // Set the modal category to match the currently selected category in the graph
-            document.getElementById('modal-category').value = document.getElementById('category-filter').value;
-            updateEntryForm();
-        }
-        
-        closeButton.onclick = function() {
-            modal.style.display = 'none';
-        }
-        
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        }
-        
-        // Toggle reps field based on category
-        function updateEntryForm() {
-            const categorySelect = document.getElementById('modal-category');
+        // Toggle weight and reps fields based on category
+        function updateFormFields() {
+            const categorySelect = document.getElementById('main-category');
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const categoryName = selectedOption.text;
-            const isBodyMass = categoryName === 'Body Mass';
+            const isBodyMass = selectedOption.getAttribute('data-is-body-mass') === 'true';
+            const isBodyWeight = selectedOption.getAttribute('data-is-body-weight') === 'true';
             
-            const repsField = document.getElementById('modal-reps-field');
-            const repsInput = document.getElementById('reps');
+            const weightField = document.getElementById('weight-field');
+            const repsField = document.getElementById('main-reps-field');
+            const weightInput = document.getElementById('main-weight');
+            const repsInput = document.getElementById('main-reps');
+            
+            // Reset all fields
+            weightField.style.display = 'block';
+            repsField.style.display = 'block';
+            weightInput.required = true;
+            repsInput.required = true;
+            weightInput.placeholder = "Enter weight";
             
             if (isBodyMass) {
-                repsField.classList.remove('show');
-                repsInput.removeAttribute('required');
+                // Body Mass: show weight, hide reps
+                repsField.style.display = 'none';
+                repsInput.required = false;
+                repsInput.value = '';
+            } else if (isBodyWeight) {
+                // Body Weight Exercise: hide weight, show reps
+                weightField.style.display = 'none';
+                weightInput.required = false;
+                weightInput.value = '0';  // Set a default value for the backend
             } else {
-                repsField.classList.add('show');
-                repsInput.setAttribute('required', 'required');
+                // Normal Exercise: show both weight and reps
+                weightField.style.display = 'block';
+                repsField.style.display = 'block';
+                weightInput.required = true;
+                repsInput.required = true;
             }
         }
         
-        // Initialize form state
+        // Body Weight Modal Functions
+        function openBodyWeightModal() {
+            document.getElementById('body-weight-modal').style.display = 'flex';
+        }
+        
+        function closeBodyWeightModal() {
+            document.getElementById('body-weight-modal').style.display = 'none';
+        }
+        
+        // Rate limiting for form submissions
         document.addEventListener('DOMContentLoaded', function() {
-            updateEntryForm();
+            let lastSubmitTime = 0;
+            const SUBMIT_COOLDOWN = 2000; // 2 seconds
+            
+            function handleFormSubmit(event) {
+                const now = Date.now();
+                if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+                    event.preventDefault();
+                    console.log('Form submission rate limited. Please wait before submitting again.');
+                    alert('Please wait a moment before submitting again.');
+                    return false;
+                }
+                
+                lastSubmitTime = now;
+                return true;
+            }
+            
+            // Add rate limiting to both forms
+            const mainForm = document.getElementById('quick-entry-form');
+            if (mainForm) {
+                mainForm.addEventListener('submit', handleFormSubmit);
+            }
+            
+            const bodyWeightForm = document.getElementById('body-weight-form');
+            if (bodyWeightForm) {
+                bodyWeightForm.addEventListener('submit', handleFormSubmit);
+            }
+            
+            // Initialize form fields on page load
+            updateFormFields();
+            
+            // Add event listener for the body weight button
+            const trackBodyWeightBtn = document.getElementById('track-body-weight-btn');
+            if (trackBodyWeightBtn) {
+                trackBodyWeightBtn.addEventListener('click', openBodyWeightModal);
+            }
         });
     </script>
 </body>

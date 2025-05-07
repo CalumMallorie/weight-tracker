@@ -4,15 +4,21 @@ from typing import Dict, Any, Optional
 
 db = SQLAlchemy()
 
+def format_date(dt: datetime) -> str:
+    """Format a datetime object consistently across the app"""
+    return dt.strftime('%Y-%m-%d')
+
 class WeightCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
-    is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass
+    is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass (just weight, no reps)
+    is_body_weight = db.Column(db.Boolean, default=False)  # For body weight exercises (just reps, no weight)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    last_used_at = db.Column(db.DateTime, nullable=True)  # Track when the category was last used
     entries = db.relationship('WeightEntry', backref='category', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
-        return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass})"
+        return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass}, is_body_weight={self.is_body_weight})"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert category to dictionary for JSON response"""
@@ -20,14 +26,15 @@ class WeightCategory(db.Model):
             'id': self.id,
             'name': self.name,
             'is_body_mass': self.is_body_mass,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'is_body_weight': self.is_body_weight,
+            'created_at': format_date(self.created_at),
+            'last_used_at': format_date(self.last_used_at) if self.last_used_at else None
         }
 
 class WeightEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     weight = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(10), nullable=False)  # 'kg' or 'lb'
-    notes = db.Column(db.Text, nullable=True)  # Notes field added as per test expectations
     reps = db.Column(db.Integer, nullable=True)  # Number of repetitions (null for body mass)
     category_id = db.Column(db.Integer, db.ForeignKey('weight_category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
@@ -35,7 +42,7 @@ class WeightEntry(db.Model):
     def __repr__(self) -> str:
         rep_str = f", reps={self.reps}" if self.reps is not None else ""
         cat_str = f", category={self.category.name}" if self.category else ""
-        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={self.created_at.strftime('%Y-%m-%d %H:%M:%S')})"
+        return f"WeightEntry(id={self.id}, weight={self.weight}{self.unit}{rep_str}{cat_str}, created_at={format_date(self.created_at)})"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert entry to dictionary for JSON response"""
@@ -43,9 +50,8 @@ class WeightEntry(db.Model):
             'id': self.id,
             'weight': self.weight,
             'unit': self.unit,
-            'notes': self.notes,
             'reps': self.reps,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': format_date(self.created_at)
         }
         
         if self.category:

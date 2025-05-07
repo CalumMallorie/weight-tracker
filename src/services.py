@@ -7,7 +7,7 @@ import pandas as pd
 from sqlalchemy import text, inspect
 from typing import List, Optional, Dict, Any, Tuple
 
-from .models import WeightEntry, WeightCategory, db
+from .models import WeightEntry, WeightCategory, db, format_date
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -76,18 +76,16 @@ def save_weight_entry(
     weight: float, 
     unit: str, 
     category_id_or_notes: Any = None, 
-    reps: Optional[int] = None,
-    notes: Optional[str] = None
+    reps: Optional[int] = None
 ) -> WeightEntry:
     """Save a new weight entry to the database
     
     For backwards compatibility with tests:
-    - If category_id_or_notes is a string, it's treated as notes
+    - If category_id_or_notes is a string, it's treated as deprecated
     - If category_id_or_notes is a number, it's treated as category_id
     """
     # Special handling for tests that pass notes as 3rd parameter
-    if isinstance(category_id_or_notes, str) and notes is None:
-        notes = category_id_or_notes
+    if isinstance(category_id_or_notes, str):
         category_id = None
     else:
         category_id = category_id_or_notes
@@ -102,15 +100,41 @@ def save_weight_entry(
         logger.error(f"Category with ID {category_id} not found")
         raise ValueError(f"Category with ID {category_id} not found")
     
-    # Validate reps based on category
-    if category.is_body_mass and reps is not None:
-        logger.warning("Body Mass entries should not have reps, ignoring reps value")
-        reps = None
-    elif not category.is_body_mass and reps is None:
-        logger.warning("Non-Body Mass entries should have reps, defaulting to 1")
-        reps = 1
+    # Check if 'is_body_weight' attribute exists to ensure backward compatibility
+    is_body_weight = False
+    if hasattr(category, 'is_body_weight'):
+        is_body_weight = category.is_body_weight
     
-    logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}, notes: {notes}")
+    if category.is_body_mass:
+        # Body Mass: ensure no reps
+        if reps is not None:
+            logger.warning("Body Mass entries should not have reps, ignoring reps value")
+            reps = None
+    elif is_body_weight:
+        # Body Weight exercise: ensure has reps but use body mass for weight
+        if reps is None:
+            logger.warning("Body Weight exercises should have reps, defaulting to 1")
+            reps = 1
+            
+        # For body weight exercises, use the most recent body mass entry as the weight
+        most_recent_body_mass = get_most_recent_body_mass()
+        if most_recent_body_mass:
+            weight = most_recent_body_mass.weight
+            unit = most_recent_body_mass.unit
+            logger.info(f"Using body mass for body weight exercise: {weight}{unit}")
+        else:
+            # If no body mass entry exists, use the provided weight or default to 0
+            logger.warning("No body mass entry found, using provided weight or default")
+            if weight <= 0:
+                weight = 70.0  # Default weight if none is provided
+                unit = 'kg'    # Default unit
+    else:
+        # Normal exercise: ensure both weight and reps
+        if reps is None:
+            logger.warning("Normal exercises should have reps, defaulting to 1")
+            reps = 1
+    
+    logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}")
     
     try:
         # Check columns exist using introspection to avoid errors with older database schemas
@@ -118,16 +142,13 @@ def save_weight_entry(
         columns = {c["name"] for c in inspector.get_columns("weight_entry")}
         
         # Prepare entry data based on available columns
+        current_time = datetime.now(UTC)
         entry_data = {
             'weight': weight,
             'unit': unit,
             'category_id': category_id,
-            'created_at': datetime.now(UTC)
+            'created_at': current_time
         }
-        
-        # Only include notes if column exists
-        if 'notes' in columns and notes is not None:
-            entry_data['notes'] = notes
             
         # Only include reps if column exists
         if 'reps' in columns and reps is not None:
@@ -136,6 +157,18 @@ def save_weight_entry(
         # Create entry and save
         entry = WeightEntry(**entry_data)
         db.session.add(entry)
+        
+        # Update category's last_used_at if the column exists
+        try:
+            # Check if weight_category table has last_used_at column
+            category_columns = {c["name"] for c in inspector.get_columns("weight_category")}
+            if "last_used_at" in category_columns:
+                category.last_used_at = current_time
+            else:
+                logger.warning("last_used_at column not found in weight_category table, skipping update")
+        except Exception as e:
+            logger.warning(f"Error checking or updating last_used_at: {str(e)}")
+        
         db.session.commit()
         logger.info(f"Entry saved with ID: {entry.id}")
         return entry
@@ -156,6 +189,93 @@ def delete_entry(entry_id: int) -> bool:
     logger.warning(f"Entry with ID {entry_id} not found for deletion")
     return False
 
+def update_entry(
+    entry_id: int,
+    weight: float,
+    unit: str,
+    category_id: int,
+    reps: Optional[int] = None
+) -> Optional[WeightEntry]:
+    """Update an existing weight entry
+    
+    Args:
+        entry_id: ID of the entry to update
+        weight: New weight value
+        unit: Weight unit ('kg' or 'lb')
+        category_id: ID of the category to assign
+        reps: Number of repetitions (None for body mass entries)
+        
+    Returns:
+        Updated entry or None if entry not found
+    """
+    logger.info(f"Attempting to update entry {entry_id} with weight={weight}{unit}, category_id={category_id}, reps={reps}")
+    
+    entry = WeightEntry.query.get(entry_id)
+    if not entry:
+        logger.warning(f"Entry {entry_id} not found for update")
+        return None
+    
+    category = WeightCategory.query.get(category_id)
+    if not category:
+        logger.error(f"Category with ID {category_id} not found")
+        raise ValueError(f"Category with ID {category_id} not found")
+    
+    # Check if 'is_body_weight' attribute exists to ensure backward compatibility
+    is_body_weight = False
+    if hasattr(category, 'is_body_weight'):
+        is_body_weight = category.is_body_weight
+    
+    if category.is_body_mass:
+        # Body Mass: ensure no reps
+        if reps is not None:
+            logger.warning("Body Mass entries should not have reps, ignoring reps value")
+            reps = None
+    elif is_body_weight:
+        # Body Weight exercise: ensure has reps but use body mass for weight
+        if reps is None:
+            logger.warning("Body Weight exercises should have reps, defaulting to 1")
+            reps = 1
+            
+        # For body weight exercises, use the most recent body mass entry as the weight
+        most_recent_body_mass = get_most_recent_body_mass()
+        if most_recent_body_mass:
+            weight = most_recent_body_mass.weight
+            unit = most_recent_body_mass.unit
+            logger.info(f"Using body mass for body weight exercise: {weight}{unit}")
+        else:
+            # If no body mass entry exists, use the provided weight or default to 0
+            logger.warning("No body mass entry found, using provided weight or default")
+            if weight <= 0:
+                weight = 70.0  # Default weight if none is provided
+                unit = 'kg'    # Default unit
+    else:
+        # Normal exercise: ensure both weight and reps
+        if reps is None:
+            logger.warning("Normal exercises should have reps, defaulting to 1")
+            reps = 1
+    
+    # Update entry values
+    entry.weight = weight
+    entry.unit = unit
+    entry.category_id = category_id
+    
+    # Only update reps if the column exists
+    if hasattr(entry, 'reps'):
+        entry.reps = reps
+    
+    try:
+        # Update category's last_used_at if the column exists
+        if hasattr(category, 'last_used_at'):
+            category.last_used_at = datetime.now(UTC)
+        
+        db.session.commit()
+        logger.info(f"Entry {entry_id} updated successfully")
+        return entry
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating entry: {str(e)}")
+        raise
+
 def get_entries_by_time_window(
     time_window: str, 
     category_id: Optional[int] = None
@@ -171,8 +291,6 @@ def get_entries_by_time_window(
         
         # Build query dynamically based on available columns
         column_list = ["id", "weight", "unit", "category_id", "created_at"]
-        if "notes" in columns:
-            column_list.append("notes")
         if "reps" in columns:
             column_list.append("reps")
             
@@ -208,140 +326,44 @@ def get_entries_by_time_window(
             query_parts.append("WHERE " + " AND ".join(where_clauses))
         
         # Add ORDER BY
-        query_parts.append("ORDER BY weight_entry.created_at")
+        query_parts.append("ORDER BY weight_entry.created_at DESC")
         
-        # Execute raw query
-        sql = " ".join(query_parts)
-        result = db.session.execute(text(sql), params)
+        # Execute query
+        query = text(" ".join(query_parts))
+        result = db.session.execute(query, params)
         
-        # Create WeightEntry objects manually
+        # Convert to WeightEntry objects
         entries = []
         for row in result:
-            created_at_value = row[4]
-            # Ensure created_at is properly formatted if it's a string or convert to string if datetime
-            if isinstance(created_at_value, datetime):
-                formatted_date = created_at_value
-            else:
-                # Try to parse the string to datetime, fallback to using as is
-                try:
-                    formatted_date = datetime.fromisoformat(str(created_at_value).replace('Z', '+00:00'))
-                except (ValueError, TypeError):
-                    formatted_date = str(created_at_value)
-            
-            entry_data = {
-                'id': row[0],
-                'weight': row[1],
-                'unit': row[2],
-                'category_id': row[3],
-                'created_at': formatted_date
-            }
-            
-            # Add optional fields if available
-            col_index = 5
-            if "notes" in columns and len(row) > col_index:
-                entry_data['notes'] = row[col_index]
-                col_index += 1
-            if "reps" in columns and len(row) > col_index:
-                entry_data['reps'] = row[col_index]
-            
-            # Create temporary entry object
+            entry_data = dict(zip(column_list, row))
             entry = WeightEntry(**entry_data)
-            
-            # Query category separately to avoid joins which might fail
             entry.category = WeightCategory.query.get(entry.category_id)
             entries.append(entry)
-            
+        
         logger.info(f"Retrieved {len(entries)} entries")
         return entries
     except Exception as e:
         logger.error(f"Error retrieving entries: {str(e)}")
-        # Return empty list if database hasn't been set up yet
         return []
 
 def get_all_entries(category_id: Optional[int] = None) -> List[WeightEntry]:
-    """Get all entries ordered by created date, optionally filtered by category"""
-    logger.info(f"Retrieving all weight entries for category_id: {category_id}")
-    
+    """Get all entries, optionally filtered by category"""
+    logger.info(f"Retrieving all entries, category_id: {category_id}")
     try:
-        # Use the same approach as get_entries_by_time_window but without time filter
-        inspector = inspect(db.engine)
-        columns = {c["name"] for c in inspector.get_columns("weight_entry")}
-        
-        # Build query dynamically based on available columns
-        column_list = ["id", "weight", "unit", "category_id", "created_at"]
-        if "notes" in columns:
-            column_list.append("notes")
-        if "reps" in columns:
-            column_list.append("reps")
-            
-        # Create column string for SQL
-        columns_sql = ", ".join(f"weight_entry.{col}" for col in column_list)
-        
-        # Build base query
-        query_parts = [f"SELECT {columns_sql} FROM weight_entry"]
-        params = {}
-        
-        # Add category filter if provided
+        query = WeightEntry.query.order_by(WeightEntry.created_at.desc())
         if category_id is not None:
-            query_parts.append("WHERE weight_entry.category_id = :category_id")
-            params["category_id"] = category_id
-        
-        # Add ORDER BY
-        query_parts.append("ORDER BY weight_entry.created_at")
-        
-        # Execute raw query
-        sql = " ".join(query_parts)
-        result = db.session.execute(text(sql), params)
-        
-        # Create WeightEntry objects manually
-        entries = []
-        for row in result:
-            created_at_value = row[4]
-            # Ensure created_at is properly formatted if it's a string or convert to string if datetime
-            if isinstance(created_at_value, datetime):
-                formatted_date = created_at_value
-            else:
-                # Try to parse the string to datetime, fallback to using as is
-                try:
-                    formatted_date = datetime.fromisoformat(str(created_at_value).replace('Z', '+00:00'))
-                except (ValueError, TypeError):
-                    formatted_date = str(created_at_value)
-            
-            entry_data = {
-                'id': row[0],
-                'weight': row[1],
-                'unit': row[2],
-                'category_id': row[3],
-                'created_at': formatted_date
-            }
-            
-            # Add optional fields if available
-            col_index = 5
-            if "notes" in columns and len(row) > col_index:
-                entry_data['notes'] = row[col_index]
-                col_index += 1
-            if "reps" in columns and len(row) > col_index:
-                entry_data['reps'] = row[col_index]
-            
-            # Create temporary entry object
-            entry = WeightEntry(**entry_data)
-            
-            # Query category separately to avoid joins which might fail
-            entry.category = WeightCategory.query.get(entry.category_id)
-            entries.append(entry)
-            
-        logger.info(f"Retrieved {len(entries)} entries total")
+            query = query.filter_by(category_id=category_id)
+        entries = query.all()
+        logger.info(f"Retrieved {len(entries)} entries")
         return entries
     except Exception as e:
-        logger.error(f"Error retrieving all entries: {str(e)}")
+        logger.error(f"Error retrieving entries: {str(e)}")
         return []
 
 def convert_to_kg(weight: float, unit: str) -> float:
-    """Convert weight to kg if in lb"""
+    """Convert weight to kg if needed"""
     if unit.lower() == 'lb':
-        result = weight * 0.45359237
-        logger.debug(f"Converted {weight}{unit} to {result:.2f}kg")
-        return result
+        return weight * 0.45359237
     return weight
 
 def create_weight_plot(
@@ -349,115 +371,103 @@ def create_weight_plot(
     time_window: str, 
     processing_type: Optional[str] = None
 ) -> Optional[str]:
-    """Create a plotly plot for weight entries with optional processing"""
-    logger.info(f"Creating weight plot for {len(entries)} entries in {time_window} window with processing type: {processing_type}")
+    """Create a plotly plot of weight entries"""
     try:
         if not entries:
-            logger.info("No entries to plot, returning None")
-            return None
-        
-        # Prepare data
-        data = []
-        default_unit = "kg"  # Default unit for display
-        category_name = None
-        
-        for entry in entries:
-            try:
-                # Ensure weight is a float
-                if not isinstance(entry.weight, (int, float)):
-                    entry.weight = float(entry.weight)
-                
-                weight_kg = convert_to_kg(entry.weight, entry.unit)
-                
-                # Remember the unit for consistent display
-                if not default_unit:
-                    default_unit = entry.unit
-                
-                # Remember category name
-                if not category_name and hasattr(entry, 'category') and entry.category:
-                    category_name = entry.category.name
-                
-                # Ensure created_at is a datetime object for sorting
-                if isinstance(entry.created_at, str):
-                    try:
-                        created_at = datetime.fromisoformat(entry.created_at.replace('Z', '+00:00'))
-                    except ValueError:
-                        # If we can't parse it, use current time as fallback
-                        created_at = datetime.now(UTC)
-                else:
-                    created_at = entry.created_at
-                
-                item = {
-                    'date': created_at,
-                    'weight_kg': weight_kg,
-                    'weight_original': entry.weight,
-                    'unit': entry.unit,
-                    'category': entry.category.name if hasattr(entry, 'category') and entry.category else "Unknown",
-                }
-                
-                # Check if entry has reps attribute and it's a valid number
-                has_reps = hasattr(entry, 'reps') and entry.reps is not None
-                if has_reps:
-                    try:
-                        # Ensure reps is an integer
-                        item['reps'] = int(entry.reps)
-                    except (ValueError, TypeError):
-                        has_reps = False
-                
-                # Add calculated values based on processing type
-                if processing_type == 'volume' and has_reps:
-                    # Calculate volume (weight × reps)
-                    item['processed_value'] = entry.weight * item['reps']
-                    y_axis_label = f'Volume ({default_unit}·reps)'
-                elif processing_type == 'estimated_1rm' and has_reps:
-                    # Calculate estimated 1RM using weight × (1 + reps / 30)
-                    item['processed_value'] = entry.weight * (1 + item['reps'] / 30)
-                    y_axis_label = f'Estimated 1RM ({default_unit})'
-                else:
-                    # Default to showing raw weight
-                    item['processed_value'] = entry.weight
-                    y_axis_label = f'Weight ({default_unit})'
-                    
-                data.append(item)
-            except Exception as e:
-                logger.error(f"Error processing entry {entry.id}: {str(e)}")
-                continue
-        
-        if not data:
-            logger.info("No valid data points to plot after processing, returning None")
+            logger.info("No entries to plot")
             return None
             
-        # Convert to DataFrame and sort by date
+        # Get category from first entry
+        category = entries[0].category if entries[0].category else None
+        category_name = category.name if category and hasattr(category, 'name') and category.name else "Unknown Exercise"
+        
+        # Determine if this is body mass or body weight exercise
+        is_body_mass = False
+        is_body_weight = False
+        
+        if category:
+            is_body_mass = category.is_body_mass if hasattr(category, 'is_body_mass') else False
+            if hasattr(category, 'is_body_weight'):
+                is_body_weight = category.is_body_weight
+        
+        # Convert entries to pandas DataFrame
+        data = []
+        for entry in entries:
+            row = {
+                'date': entry.created_at,
+                'weight_original': entry.weight,
+                'unit': entry.unit,
+                'weight_kg': convert_to_kg(entry.weight, entry.unit)
+            }
+            
+            # Add reps if available
+            if hasattr(entry, 'reps') and entry.reps is not None:
+                row['reps'] = entry.reps
+            
+            data.append(row)
+            
         df = pd.DataFrame(data)
-        df = df.sort_values(by='date')
         
-        if len(df) < 2:
-            # Add a duplicate point slightly offset if only one point
-            # This ensures a line can be drawn
-            if len(df) == 1:
-                logger.info("Only one data point, adding offset duplicate for line plot")
-                new_row = df.iloc[0].copy()
-                new_row['date'] = new_row['date'] + timedelta(hours=1)
-                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        # Sort by date
+        df = df.sort_values('date')
         
-        # Y-axis value based on processing type
-        y_value = 'processed_value'
-        
-        # Determine smart y-axis label
-        is_body_mass = True
-        if category_name:
-            is_body_mass = category_name == 'Body Mass'
+        # Determine default unit based on most common unit
+        default_unit = df['unit'].mode().iloc[0]
         
         # Create more specific y-axis label based on the category and processing type
         if is_body_mass:
             y_axis_label = f'Body Weight ({default_unit})'
+        elif is_body_weight:
+            if processing_type == 'volume':
+                y_axis_label = f'{category_name} Volume (Body Weight × Reps)'
+            elif processing_type == 'estimated_1rm':
+                y_axis_label = f'{category_name} Est. 1RM (Body Weight)'
+            elif processing_type == 'reps':
+                y_axis_label = f'{category_name} Reps'
+            else:
+                y_axis_label = f'{category_name} (Body Weight Exercise)'
         elif category_name:
             if processing_type == 'volume':
                 y_axis_label = f'{category_name} Volume ({default_unit}·reps)'
             elif processing_type == 'estimated_1rm':
                 y_axis_label = f'{category_name} Est. 1RM ({default_unit})'
+            elif processing_type == 'reps':
+                y_axis_label = f'{category_name} Reps'
             else:
                 y_axis_label = f'{category_name} Weight ({default_unit})'
+        else:
+            # Default label if no category information is available
+            y_axis_label = f'Weight ({default_unit})'
+        
+        # Convert all weights to the default unit
+        if default_unit == 'kg':
+            df['processed_value'] = df['weight_kg']
+        else:  # lb
+            df['processed_value'] = df['weight_kg'] * 2.20462
+        
+        # Apply processing if requested
+        if processing_type == 'volume' and 'reps' in df.columns:
+            df['processed_value'] = df['processed_value'] * df['reps']
+        elif processing_type == 'estimated_1rm' and 'reps' in df.columns:
+            # Brzycki formula: 1RM = weight × (36 / (37 - reps))
+            # Handle negative or very large reps that could cause division by zero or negative results
+            df['safe_reps'] = df['reps'].apply(lambda x: min(max(x, 0), 36))
+            df['processed_value'] = df['processed_value'] * (36 / (37 - df['safe_reps']))
+        elif processing_type == 'reps' and 'reps' in df.columns:
+            # Plot raw reps instead of weight
+            df['processed_value'] = df['reps']
+        
+        # If there's only one data point, duplicate it slightly offset to show a line
+        if len(df) == 1:
+            new_row = df.iloc[0].copy()
+            # Ensure date is a datetime object before adding timedelta
+            if isinstance(new_row['date'], str):
+                new_row['date'] = pd.to_datetime(new_row['date'])
+            new_row['date'] = new_row['date'] + timedelta(hours=1)
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        
+        # Y-axis value based on processing type
+        y_value = 'processed_value'
         
         # Create plot
         fig = px.line(
@@ -471,7 +481,31 @@ def create_weight_plot(
         # Add custom hover text
         hovertemplate = 'Date: %{x}<br>'
         
-        if processing_type in ('volume', 'estimated_1rm') and not is_body_mass and 'reps' in df.columns:
+        if is_body_weight:
+            if processing_type in ('volume', 'estimated_1rm', 'reps'):
+                hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
+                hovertemplate += 'Body Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
+                hovertemplate += 'Reps: %{customdata[2]}'
+            else:
+                hovertemplate += 'Body Weight: %{y:.1f} %{text}<br>'
+                hovertemplate += 'Reps: %{customdata[0]}'
+                
+            # For body weight exercises, display both body weight and reps in hover
+            if 'reps' in df.columns:
+                if processing_type in ('volume', 'estimated_1rm', 'reps'):
+                    customdata_cols = ['weight_original', 'unit', 'reps']
+                else:
+                    customdata_cols = ['reps']
+                fig.update_traces(
+                    customdata=df[customdata_cols],
+                    hovertemplate=hovertemplate + '<extra></extra>'
+                )
+            else:
+                fig.update_traces(
+                    text=df['unit'],
+                    hovertemplate=hovertemplate + '<extra></extra>'
+                )
+        elif processing_type in ('volume', 'estimated_1rm', 'reps') and not is_body_mass and 'reps' in df.columns:
             hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
             hovertemplate += 'Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
             hovertemplate += 'Reps: %{customdata[2]}'
@@ -527,7 +561,8 @@ def create_weight_plot(
 def get_available_processing_types() -> List[Dict[str, str]]:
     """Get available processing options for weight entries"""
     return [
-        {'id': 'none', 'name': 'None (Raw Weight)'},
+        {'id': 'none', 'name': 'Raw Weight'},
+        {'id': 'reps', 'name': 'Raw Reps'},
         {'id': 'volume', 'name': 'Volume (Weight × Reps)'},
         {'id': 'estimated_1rm', 'name': 'Estimated 1RM'}
     ]
@@ -577,4 +612,24 @@ def migrate_old_entries_to_body_mass() -> None:
             logger.info("No entries found that need migration")
     except Exception as e:
         logger.error(f"Error during migration: {str(e)}")
-        logger.info("Continuing with application startup despite migration error") 
+        logger.info("Continuing with application startup despite migration error")
+
+def get_most_recent_body_mass() -> Optional[WeightEntry]:
+    """Get the most recent body mass entry for use in body weight exercises"""
+    logger.info("Retrieving most recent body mass entry")
+    
+    # Find the body mass category
+    body_mass_category = WeightCategory.query.filter_by(is_body_mass=True).first()
+    if not body_mass_category:
+        logger.warning("Body mass category not found")
+        return None
+    
+    # Find the most recent entry
+    most_recent = WeightEntry.query.filter_by(category_id=body_mass_category.id).order_by(WeightEntry.created_at.desc()).first()
+    
+    if most_recent:
+        logger.info(f"Found most recent body mass entry: {most_recent.weight}{most_recent.unit} ({format_date(most_recent.created_at)})")
+    else:
+        logger.info("No body mass entries found")
+    
+    return most_recent 

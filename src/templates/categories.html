@@ -129,6 +129,35 @@
                 font-size: 1.5rem;
             }
         }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+        .type-description {
+            margin-left: 26px;
+            font-size: 14px;
+            color: #777;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +181,30 @@
                 <label for="name">Category Name</label>
                 <input type="text" id="name" name="name" placeholder="Enter category name (e.g. Deadlift, Bench Press)" required>
             </div>
+            <div class="form-group">
+                <label>Category Type</label>
+                <div style="margin-top: 10px;">
+                    <label class="radio-label">
+                        <input type="radio" name="category_type" value="normal" checked>
+                        Normal Exercise (weight and reps)
+                    </label>
+                    <div class="type-description">For exercises using weights, such as bench press or deadlift</div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label class="radio-label">
+                        <input type="radio" name="category_type" value="body_weight">
+                        Body Weight Exercise (just reps, no weight)
+                    </label>
+                    <div class="type-description">For exercises using your body weight, such as push-ups or pull-ups</div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label class="radio-label">
+                        <input type="radio" name="category_type" value="body_mass">
+                        Body Mass (just weight, no reps)
+                    </label>
+                    <div class="type-description">For tracking body weight measurements</div>
+                </div>
+            </div>
             <button type="submit">Add Category</button>
         </form>
     </div>
@@ -167,6 +220,10 @@
                     <span class="category-name">{{ category.name }}</span>
                     {% if category.is_body_mass %}
                     <span class="category-badge">Body Mass</span>
+                    {% elif category.is_body_weight %}
+                    <span class="category-badge" style="background-color: #2ecc71;">Body Weight</span>
+                    {% else %}
+                    <span class="category-badge" style="background-color: #9b59b6;">Normal</span>
                     {% endif %}
                 </div>
                 {% if not category.is_body_mass %}

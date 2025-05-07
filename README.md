@@ -16,74 +16,53 @@ A web application for tracking and visualizing your weight over time.
 
 The project follows a modular architecture for maintainability and testability:
 
-- `app.py` - Main application entry point with app factory function
-- `models.py` - Database models
-- `services.py` - Business logic and services
-- `routes.py` - API endpoints and routes
-- `templates/` - HTML templates
-  - `index.html` - Main dashboard with weight input and graph
-  - `entries.html` - Entry management page
+- `src/app.py` - Main application entry point with app factory function
+- `src/models.py` - Database models
+- `src/services.py` - Business logic and services
+- `src/routes.py` - API endpoints and routes
+- `src/templates/` - HTML templates
+- `src/static/` - Static assets for the web interface
 - `tests/` - Unit tests
-- `requirements.txt` - Python dependencies
 
-## Setup and Running
+## Development Workflow
 
-### Local Development
+This project is designed to be used with Docker. The recommended workflow is:
 
-1. Install dependencies:
-   ```
-   python -m venv venv
-   venv/bin/pip install -r requirements.txt
-   ```
+1. Make code changes
+2. Run tests to ensure everything works
+3. Build and run the Docker image to verify functionality
 
-2. Run the application:
-   ```
-   venv/bin/python app.py
-   ```
+### Running Tests
 
-3. Open your browser and navigate to:
-   ```
-   http://127.0.0.1:8080
-   ```
-
-### Testing
-
-Run the unit tests with pytest:
-```
-venv/bin/python -m pytest
+```bash
+python -m pytest
 ```
 
-## Docker Setup
+### Docker Setup
 
-### Building the Docker Image
+#### Building and Running the Docker Image
 
-The application is designed to be Docker-compatible. To build and run with Docker:
+```bash
+# Build the Docker image
+docker build -t weight-tracker .
 
-1. Build the Docker image:
-   ```
-   docker build -t calomal/weight-tracker .
-   ```
+# Run the container
+docker run -p 8080:8080 -v $(pwd)/data:/app/data weight-tracker
+```
 
-2. Run the container:
-   ```
-   docker run -p 8080:8080 -v /path/to/data:/app/data calomal/weight-tracker
-   ```
-
-### Using Docker Compose
+#### Using Docker Compose
 
 Alternatively, use Docker Compose for easier deployment:
 
-1. Create a data directory for persistent storage:
-   ```
-   mkdir -p data
-   ```
+```bash
+# Run with Docker Compose
+docker-compose up -d
 
-2. Run with Docker Compose:
-   ```
-   docker-compose up -d
-   ```
+# Stop the application
+docker-compose down
+```
 
-3. Access the application at: http://localhost:8080
+Access the application at: http://localhost:8080
 
 ## Unraid Installation
 
@@ -122,29 +101,6 @@ To run this application on Unraid:
    docker-compose up -d
    ```
 
-### Method 3: Manual Image Build on Unraid
-
-If you prefer to build the image directly on Unraid:
-
-1. Copy the project files to your Unraid server.
-
-2. In the Unraid terminal, navigate to the project directory and run:
-   ```
-   docker build -t weight-tracker .
-   ```
-
-3. Run the container:
-   ```
-   docker run -d -p 8080:8080 -v /mnt/user/appdata/weight-tracker:/app/data --name weight-tracker weight-tracker
-   ```
-
-### Accessing the Application
-
-After installation, access your Weight Tracker application at:
-```
-http://YOUR_UNRAID_IP:8080
-```
-
 ## Data Persistence
 
 The application stores all data in an SQLite database located at `/app/data/weight_tracker.db` inside the container. The Docker setup maps this directory to a persistent volume on your host system.
@@ -170,4 +126,49 @@ This application supports PWA features, allowing you to install it on your iPhon
 Once installed, the app will:
 - Open in full-screen mode (without browser UI)
 - Work offline with cached data
-- Have its own icon on your home screen 
+- Have its own icon on your home screen
+
+## Running with Docker
+
+The easiest way to run Weight Tracker is using Docker:
+
+```bash
+docker run -d \
+  --name weight-tracker \
+  -p 8080:8080 \
+  -v ./data:/app/data \
+  -v ./logs:/app/logs \
+  -v ./instance:/app/instance \
+  calomal/weight-tracker
+```
+
+This will run the container in the background, mapping port 8080 on your host to the container, and creating three volumes:
+- `./data`: For storing exported data files
+- `./logs`: For application logs
+- `./instance`: For the database file
+
+You can access the application at http://localhost:8080
+
+### Database Migration from Older Versions
+
+Weight Tracker supports automatic migration from older database versions. If you're upgrading from an older version, you can mount your existing database into the `/app/data` directory, and it will be automatically migrated to the current schema.
+
+Example:
+```bash
+docker run -d \
+  --name weight-tracker \
+  -p 8080:8080 \
+  -v /path/to/your/old/database/directory:/app/data \
+  -v ./logs:/app/logs \
+  -v ./instance:/app/instance \
+  calomal/weight-tracker
+```
+
+The application will:
+1. Detect the old database
+2. Create a backup of your original database in the data directory
+3. Copy the database to the instance directory
+4. Perform all necessary schema migrations
+5. Start normally with your existing data
+
+A backup of your original database is automatically created with the naming format: `weight_tracker.db.backup-YYYYmmdd-HHMMSS`. 

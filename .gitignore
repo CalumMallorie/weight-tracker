@@ -66,4 +66,12 @@ logs/
 *.log
 
 # Additional virtual environment patterns
-.venv/ 
+.venv/
+
+# Docker test directories
+docker_test_data/
+docker_test_logs/
+docker_test_instance/
+
+# DS_Store files
+.DS_Store 

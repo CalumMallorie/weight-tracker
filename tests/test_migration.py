@@ -59,7 +59,6 @@ def test_migration_creates_missing_column(app_with_old_schema):
         columns_before = {c["name"] for c in inspector.get_columns("weight_entry")}
         
         assert "category_id" not in columns_before
-        assert "notes" not in columns_before
         assert "reps" not in columns_before
         
         # Run the migration
@@ -70,8 +69,9 @@ def test_migration_creates_missing_column(app_with_old_schema):
         columns_after = {c["name"] for c in inspector.get_columns("weight_entry")}
         
         assert "category_id" in columns_after
-        assert "notes" in columns_after
         assert "reps" in columns_after
+        # Notes field should be removed in v5 migration
+        assert "notes" not in columns_after
 
 def test_verify_model_schema(app_with_old_schema):
     """Test that verify_model_schema correctly identifies schema issues"""
@@ -103,8 +103,7 @@ def test_save_entry_after_migration(app_with_old_schema):
             weight=80.0,
             unit="kg",
             category_id_or_notes=category.id,
-            reps=None,
-            notes="Test entry after migration"
+            reps=None
         )
         
         # Verify the entry was saved with the new fields
@@ -113,7 +112,6 @@ def test_save_entry_after_migration(app_with_old_schema):
         assert entry.unit == "kg"
         assert entry.category_id == category.id
         assert entry.reps is None
-        assert entry.notes == "Test entry after migration"
 
 def test_load_entry_with_missing_fields(app_with_old_schema):
     """Test that we can load entries that are missing optional fields"""
@@ -145,8 +143,11 @@ def test_load_entry_with_missing_fields(app_with_old_schema):
         assert entry.weight == 75.5
         assert entry.unit == "kg"
         assert entry.category_id == category.id
-        assert entry.notes is None
         assert entry.reps is None
+        
+        # Verify notes is not a column in the model
+        columns = [column.name for column in WeightEntry.__table__.columns]
+        assert 'notes' not in columns
 
 def test_save_entry_handles_schema_mismatch(app_with_old_schema):
     """Test that save_weight_entry handles schema mismatch gracefully"""
@@ -166,8 +167,8 @@ def test_save_entry_handles_schema_mismatch(app_with_old_schema):
         db.session.add(exercise_category)
         db.session.commit()
         
-        # Try to save an entry with notes and reps to exercise category
-        entry = services.save_weight_entry(85.0, 'kg', exercise_category.id, 5, "Test notes")
+        # Try to save an entry with reps to exercise category
+        entry = services.save_weight_entry(85.0, 'kg', exercise_category.id, 5)
         
         # Verify the entry was saved correctly
         assert entry.id is not None
@@ -175,10 +176,9 @@ def test_save_entry_handles_schema_mismatch(app_with_old_schema):
         assert entry.unit == 'kg'
         assert entry.category_id == exercise_category.id
         assert entry.reps == 5
-        assert entry.notes == "Test notes"
 
         # Try saving without category (should use default body mass)
-        entry2 = services.save_weight_entry(90.0, 'kg', notes="Without category")
+        entry2 = services.save_weight_entry(90.0, 'kg')
         assert entry2.id is not None
         assert entry2.category_id == body_mass_category.id
         # Body mass entries should not have reps
@@ -203,8 +203,7 @@ def test_get_entries_handles_schema_mismatch(app_with_old_schema):
             services.save_weight_entry(
                 weight=80.0 + i,
                 unit='kg',
-                category_id_or_notes=category.id,
-                notes=f"Test entry {i+1}"
+                category_id_or_notes=category.id
             )
             
         # Force a flush to ensure all data is written

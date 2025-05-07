@@ -10,4 +10,11 @@ os.makedirs(os.path.dirname(__file__), exist_ok=True)
 
 # Create an empty __init__.py file in the tests directory
 with open(os.path.join(os.path.dirname(__file__), '__init__.py'), 'a'):
-    pass 
+    pass
+
+@pytest.fixture
+def test_client(app):
+    """Create a test client for the app"""
+    with app.test_client() as client:
+        with app.app_context():
+            yield client 

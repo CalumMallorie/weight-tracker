@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Tracker</title>
+    
+    <!-- PWA metadata -->
+    <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Weight Tracker">
+    <meta name="description" content="Track and visualize your weight over time">
+    
+    <!-- PWA icons and manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png">
+    
+    <!-- Main scripts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="/static/register-sw.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .time-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .time-filter {
+            padding: 8px 16px;
+            background-color: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+        .time-filter.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .error-message {
+            color: #e74c3c;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e74c3c;
+            background-color: #fadbd8;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .weight-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .weight-info input {
+            flex: 2;
+        }
+        .weight-info select {
+            flex: 1;
+        }
+        .plot-container {
+            height: 400px;
+            margin: 10px 0;
+            width: 100%;
+            overflow: hidden;
+        }
+        .last-entry {
+            font-size: 24px;
+            text-align: center;
+            margin: 15px 0;
+            color: #2c3e50;
+        }
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-group select {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filter-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .category-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .add-category-button {
+            margin-top: 10px;
+        }
+        .reps-field {
+            display: none;
+        }
+        .reps-field.show {
+            display: block;
+        }
+        .body-weight-badge {
+            display: inline-block;
+            background-color: #2ecc71;
+            color: white;
+            font-size: 12px;
+            padding: 3px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s ease;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #555;
+        }
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .floating-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        .floating-button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1, h2 {
+                font-size: 1.5rem;
+            }
+            .nav-links {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .filter-group {
+                flex-direction: column;
+            }
+            /* Make date more compact on mobile */
+            .date-mobile {
+                font-size: 14px;
+                white-space: nowrap;
+            }
+            /* Adjust plot height for mobile */
+            .plot-container {
+                height: 300px;
+            }
+            .action-buttons {
+                margin-top: 15px;
+                width: 100%;
+            }
+            .btn {
+                padding: 10px;
+                text-align: center;
+                flex: 1;
+            }
+        }
+        @media (max-width: 480px) {
+            .plot-container {
+                height: 300px;
+            }
+            body {
+                padding: 10px;
+            }
+            .time-filters {
+                gap: 5px;
+            }
+            .time-filter {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+        }
+        /* Styles for quick entry form */
+        .quick-entry-form {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .inline-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .save-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .save-button:hover {
+            background-color: #2980b9;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-links">
+        <h1>Weight Tracker</h1>
+        <div class="action-buttons">
+            <a href="/entries" data-url="entries" class="btn btn-primary">View All Entries</a>
+            <a href="/categories" data-url="categories" class="btn btn-primary">Manage Categories</a>
+        </div>
+    </div>
+    
+    
+    
+    <div class="filter-container">
+        <div class="filter-group">
+            <select id="category-filter" onchange="updateCategory()">
+                
+                <option value="2" selected>
+                    Bench Press
+                </option>
+                
+                <option value="1" >
+                    Body Mass (Body Weight)
+                </option>
+                
+            </select>
+            
+            <select id="processing-filter" onchange="updateProcessing()">
+                
+                <option value="none" selected>
+                    Raw Weight
+                </option>
+                
+                <option value="volume" >
+                    Volume (Weight × Reps)
+                </option>
+                
+                <option value="estimated_1rm" >
+                    Estimated 1RM
+                </option>
+                
+            </select>
+        </div>
+        
+        <div class="time-filters">
+            <a href="/?window=week&amp;category=2&amp;processing=none" 
+               class="time-filter " data-window="week">
+                Week
+            </a>
+            <a href="/?window=month&amp;category=2&amp;processing=none" 
+               class="time-filter active" data-window="month">
+                Month
+            </a>
+            <a href="/?window=year&amp;category=2&amp;processing=none" 
+               class="time-filter " data-window="year">
+                Year
+            </a>
+            <a href="/?window=all&amp;category=2&amp;processing=none" 
+               class="time-filter " data-window="all">
+                All
+            </a>
+        </div>
+    </div>
+    
+    <!-- Quick Entry Form on Main Screen -->
+    <div class="container quick-entry-form">
+        <h2>Quick Entry</h2>
+        <form method="POST" class="inline-form" id="quick-entry-form">
+            <div class="form-group">
+                <label for="main-category">Exercise Type</label>
+                <select id="main-category" name="category" onchange="updateMainRepsField()">
+                    
+                    <option value="2" selected>
+                        Bench Press
+                    </option>
+                    
+                    <option value="1" >
+                        Body Mass (Body Weight)
+                    </option>
+                    
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group weight-info">
+                    <label for="main-weight">Weight</label>
+                    <input type="number" id="main-weight" name="weight" step="0.1" min="0" placeholder="Enter weight" required>
+                    <select id="main-unit" name="unit">
+                        <option value="kg">kg</option>
+                        <option value="lb">lb</option>
+                    </select>
+                </div>
+                
+                <div id="main-reps-field" class="form-group reps-field show">
+                    <label for="main-reps">Reps</label>
+                    <input type="number" id="main-reps" name="reps" min="1" placeholder="Reps" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="save-button" id="save-entry-button">Save Entry</button>
+        </form>
+    </div>
+    
+    
+    
+    <!-- Floating "+" button to open modal -->
+    <div class="floating-button" id="add-entry-button">+</div>
+    
+    <!-- Modal for adding new entries -->
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-modal">&times;</span>
+            <h2>Record New Entry</h2>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label for="category">Exercise Type</label>
+                    <select id="category" name="category" onchange="updateRepsField()">
+                        
+                        <option value="2" selected>
+                            Bench Press
+                        </option>
+                        
+                        <option value="1" >
+                            Body Mass (Body Weight)
+                        </option>
+                        
+                    </select>
+                </div>
+                
+                <div class="form-group weight-info">
+                    <input type="number" id="weight" name="weight" step="0.1" min="0" placeholder="Enter weight" required>
+                    <select id="unit" name="unit">
+                        <option value="kg">kg</option>
+                        <option value="lb">lb</option>
+                    </select>
+                </div>
+                
+                <div id="reps-field" class="form-group reps-field show">
+                    <label for="reps">Number of Reps</label>
+                    <input type="number" id="reps" name="reps" min="1" placeholder="Enter number of reps" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes (optional)</label>
+                    <textarea id="notes" name="notes" placeholder="Add any notes about this entry"></textarea>
+                </div>
+                
+                <button type="submit">Save Entry</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Update category and reload page
+        function updateCategory() {
+            const categoryId = document.getElementById('category-filter').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('category', categoryId);
+            window.location = currentUrl.toString();
+        }
+        
+        // Update processing type and reload page
+        function updateProcessing() {
+            const processingType = document.getElementById('processing-filter').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('processing', processingType);
+            window.location = currentUrl.toString();
+        }
+        
+        // Modal control
+        const modal = document.getElementById('entry-modal');
+        const addButton = document.getElementById('add-entry-button');
+        const closeButton = document.getElementById('close-modal');
+        
+        addButton.onclick = function() {
+            modal.style.display = 'block';
+            // Set the modal category to match the currently selected category in the graph
+            document.getElementById('category').value = document.getElementById('category-filter').value;
+            updateRepsField();
+        }
+        
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Toggle reps field based on category
+        function updateRepsField() {
+            const categorySelect = document.getElementById('category');
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const repsField = document.getElementById('reps-field');
+            const repsInput = document.getElementById('reps');
+            
+            // Check if the selected category is a body weight exercise
+            const isBodyWeight = selectedOption.textContent.includes('(Body Weight)');
+            
+            if (isBodyWeight) {
+                repsField.classList.remove('show');
+                repsInput.removeAttribute('required');
+                repsInput.value = '';
+            } else {
+                repsField.classList.add('show');
+                repsInput.setAttribute('required', '');
+            }
+        }
+        
+        // Toggle reps field based on category for main form
+        function updateMainRepsField() {
+            const categorySelect = document.getElementById('main-category');
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const repsField = document.getElementById('main-reps-field');
+            const repsInput = document.getElementById('main-reps');
+            
+            // Check if the selected category is a body weight exercise
+            const isBodyWeight = selectedOption.textContent.includes('(Body Weight)');
+            
+            if (isBodyWeight) {
+                repsField.classList.remove('show');
+                repsInput.removeAttribute('required');
+                repsInput.value = '';
+            } else {
+                repsField.classList.add('show');
+                repsInput.setAttribute('required', '');
+                if (!repsInput.value) repsInput.value = '1';
+            }
+        }
+        
+        // Call updateRepsField on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRepsField();
+            updateMainRepsField();
+            
+            // Add rate limiting to form submission
+            const form = document.getElementById('quick-entry-form');
+            if (form) {
+                form.addEventListener('submit', handleFormSubmit);
+            }
+            
+            // Also add rate limiting to the modal form
+            const modalForm = document.getElementById('entry-form');
+            if (modalForm) {
+                modalForm.addEventListener('submit', handleFormSubmit);
+            }
+        });
+        
+        // Track last submission time
+        let lastSubmitTime = 0;
+        const SUBMIT_COOLDOWN = 2000; // 2 seconds cooldown between submissions
+        
+        function handleFormSubmit(e) {
+            const now = Date.now();
+            const saveButton = e.target.querySelector('button[type="submit"]');
+            
+            // Check if enough time has passed since last submission
+            if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+                e.preventDefault();
+                
+                // Show feedback to user
+                if (saveButton) {
+                    const originalText = saveButton.textContent;
+                    saveButton.disabled = true;
+                    saveButton.textContent = 'Please wait...';
+                    
+                    // Re-enable after cooldown
+                    setTimeout(() => {
+                        saveButton.disabled = false;
+                        saveButton.textContent = originalText;
+                    }, SUBMIT_COOLDOWN - (now - lastSubmitTime));
+                }
+                
+                return false;
+            }
+            
+            // Update last submit time
+            lastSubmitTime = now;
+            
+            // Disable the button temporarily to prevent accidental double clicks
+            if (saveButton) {
+                saveButton.disabled = true;
+                
+                // Re-enable after a delay (in case the submission fails)
+                setTimeout(() => {
+                    saveButton.disabled = false;
+                }, 5000);
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html> 
