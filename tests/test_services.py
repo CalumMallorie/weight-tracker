@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, UTC
 import json
 from unittest.mock import patch, MagicMock
 import pandas as pd
+import time
 
 from src import services
 from src.models import WeightEntry, db
@@ -136,4 +137,40 @@ def test_get_entries_by_time_window(app_context):
     
     # Test 'year' time window
     result = services.get_entries_by_time_window('year')
-    assert isinstance(result, list) 
+    assert isinstance(result, list)
+
+def test_last_used_at_updates(test_client):
+    """Test that last_used_at is updated when an entry is created"""
+    # Create a new category
+    category = get_or_create_category("Test Exercise")
+    assert category.last_used_at is None
+    
+    # Create an entry
+    entry1 = save_weight_entry(100, "kg", category.id, reps=10)
+    assert category.last_used_at is not None
+    first_used_time = category.last_used_at
+    
+    # Wait a moment and create another entry
+    time.sleep(1)
+    
+    # Create another entry
+    entry2 = save_weight_entry(110, "kg", category.id, reps=8)
+    assert category.last_used_at > first_used_time
+
+def test_notes_field_removed(test_client):
+    """Test that notes field is no longer available"""
+    category = get_or_create_category("Test Exercise")
+    
+    # Create an entry without notes
+    entry = save_weight_entry(100, "kg", category.id, reps=10)
+    
+    # Verify entry was created successfully
+    assert entry.id is not None
+    
+    # Verify notes attribute is not present
+    with pytest.raises(AttributeError):
+        _ = entry.notes
+        
+    # Verify notes is not in the dictionary representation
+    entry_dict = entry.to_dict()
+    assert 'notes' not in entry_dict 

@@ -158,4 +158,45 @@ def verify_model_schema() -> Dict[str, bool]:
         return results
     except Exception as e:
         logger.error(f"Error verifying model schema: {str(e)}")
-        return {"error": False} 
+        return {"error": False}
+
+def migrate_db_v5(db):
+    """
+    Migration v5: Add last_used_at to WeightCategory and remove notes from WeightEntry
+    """
+    try:
+        # Add last_used_at column to weight_category
+        db.session.execute("""
+            ALTER TABLE weight_category 
+            ADD COLUMN last_used_at TIMESTAMP
+        """)
+        
+        # Remove notes column from weight_entry
+        db.session.execute("""
+            ALTER TABLE weight_entry 
+            DROP COLUMN notes
+        """)
+        
+        # Update schema version
+        db.session.execute("""
+            UPDATE schema_version 
+            SET version = 5 
+            WHERE id = 1
+        """)
+        
+        db.session.commit()
+        print("Migration v5 completed successfully")
+        return True
+    except Exception as e:
+        print(f"Error in migration v5: {e}")
+        db.session.rollback()
+        return False
+
+# Update migrations list
+MIGRATIONS = [
+    migrate_db_v1,
+    migrate_db_v2,
+    migrate_db_v3,
+    migrate_db_v4,
+    migrate_db_v5
+] 

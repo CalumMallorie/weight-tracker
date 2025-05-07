@@ -9,6 +9,7 @@ class WeightCategory(db.Model):
     name = db.Column(db.String(50), nullable=False, unique=True)
     is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    last_used_at = db.Column(db.DateTime, nullable=True)  # Track when the category was last used
     entries = db.relationship('WeightEntry', backref='category', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
@@ -20,14 +21,14 @@ class WeightCategory(db.Model):
             'id': self.id,
             'name': self.name,
             'is_body_mass': self.is_body_mass,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'last_used_at': self.last_used_at.strftime('%Y-%m-%d %H:%M:%S') if self.last_used_at else None
         }
 
 class WeightEntry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     weight = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(10), nullable=False)  # 'kg' or 'lb'
-    notes = db.Column(db.Text, nullable=True)  # Notes field added as per test expectations
     reps = db.Column(db.Integer, nullable=True)  # Number of repetitions (null for body mass)
     category_id = db.Column(db.Integer, db.ForeignKey('weight_category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
@@ -43,7 +44,6 @@ class WeightEntry(db.Model):
             'id': self.id,
             'weight': self.weight,
             'unit': self.unit,
-            'notes': self.notes,
             'reps': self.reps,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }

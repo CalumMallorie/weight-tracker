@@ -110,7 +110,7 @@ def save_weight_entry(
         logger.warning("Non-Body Mass entries should have reps, defaulting to 1")
         reps = 1
     
-    logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}, notes: {notes}")
+    logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}")
     
     try:
         # Check columns exist using introspection to avoid errors with older database schemas
@@ -118,16 +118,13 @@ def save_weight_entry(
         columns = {c["name"] for c in inspector.get_columns("weight_entry")}
         
         # Prepare entry data based on available columns
+        current_time = datetime.now(UTC)
         entry_data = {
             'weight': weight,
             'unit': unit,
             'category_id': category_id,
-            'created_at': datetime.now(UTC)
+            'created_at': current_time
         }
-        
-        # Only include notes if column exists
-        if 'notes' in columns and notes is not None:
-            entry_data['notes'] = notes
             
         # Only include reps if column exists
         if 'reps' in columns and reps is not None:
@@ -136,6 +133,10 @@ def save_weight_entry(
         # Create entry and save
         entry = WeightEntry(**entry_data)
         db.session.add(entry)
+        
+        # Update category's last_used_at
+        category.last_used_at = current_time
+        
         db.session.commit()
         logger.info(f"Entry saved with ID: {entry.id}")
         return entry
