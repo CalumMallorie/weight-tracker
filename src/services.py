@@ -536,11 +536,12 @@ def create_weight_plot(
         # Customize appearance for better mobile experience
         fig.update_layout(
             plot_bgcolor='rgba(240,240,240,0.9)',
-            font=dict(family="Arial, sans-serif", size=14),
-            hoverlabel=dict(bgcolor="white", font_size=14),
-            margin=dict(l=10, r=10, t=10, b=10),
+            font=dict(family="Arial, sans-serif", size=12),  # Reduce font size for mobile
+            hoverlabel=dict(bgcolor="white", font_size=12),
+            margin=dict(l=40, r=20, t=20, b=50),  # Increase margins, especially bottom
             height=400,
             autosize=True,
+            showlegend=False,  # Remove legend to save space
             hovermode='closest',
             title=None,  # Explicitly remove title
         )
@@ -548,16 +549,21 @@ def create_weight_plot(
         fig.update_xaxes(
             tickformat='%Y-%m-%d',
             gridcolor='rgba(200,200,200,0.3)',
-            title_font=dict(size=14),
+            title_font=dict(size=11),  # Smaller axis title font
+            tickfont=dict(size=10),    # Smaller tick font
             automargin=True,
-            fixedrange=True  # Prevents x-axis zoom on mobile
+            fixedrange=True,  # Prevents x-axis zoom on mobile
+            title_standoff=15    # Add space between title and axis
         )
         
         fig.update_yaxes(
             gridcolor='rgba(200,200,200,0.3)',
-            title_font=dict(size=14),
+            title_font=dict(size=11),  # Smaller axis title font  
+            tickfont=dict(size=10),    # Smaller tick font
             automargin=True,
-            fixedrange=True  # Prevents y-axis zoom on mobile
+            fixedrange=True,  # Prevents y-axis zoom on mobile
+            title_standoff=15,   # Add space between title and axis
+            side='left'          # Ensure y-axis title is on the left
         )
         
         # Convert to JSON for embedding in HTML

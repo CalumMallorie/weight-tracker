@@ -11,6 +11,10 @@ from src.models import db, WeightEntry
 from src import services
 
 
+# Mark all tests in this file as integration tests (medium speed)
+pytestmark = pytest.mark.integration
+
+
 class TestIndexPageRendering:
     """Test main index page rendering and behavior"""
     
@@ -170,6 +174,30 @@ class TestMobileResponsiveness:
             html_content = response.get_data(as_text=True)
             # Should have responsive design elements
             assert 'max-width' in html_content or 'container' in html_content
+    
+    def test_plot_mobile_cutoff_prevention(self, app, client, sample_categories):
+        """Plot should have proper mobile configuration to prevent bottom cutoff"""
+        with app.app_context():
+            # Add data to generate a plot
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
+            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10)
+            
+            response = client.get(f'/?category={sample_categories["benchpress"].id}')
+            assert response.status_code == 200
+            
+            html_content = response.get_data(as_text=True)
+            
+            # Check that CSS has proper mobile adjustments
+            assert 'overflow: visible' in html_content, "Plot should use visible overflow to prevent cutoff"
+            assert 'min-height' in html_content, "Plot should have minimum height"
+            
+            # Check for mobile media queries that increase plot height
+            assert '@media (max-width: 768px)' in html_content, "Should have mobile CSS rules"
+            assert '@media (max-width: 480px)' in html_content, "Should have small mobile CSS rules"
+            
+            # Check that Plotly config includes mobile optimizations
+            assert 'scrollZoom: false' in html_content, "Should disable scroll zoom on mobile"
+            assert 'responsive: true' in html_content, "Should be responsive"
 
 
 class TestNavigationAndLinks:

@@ -5,8 +5,59 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_long_tests:
+        description: 'Run long tests (Docker, integration)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
+  # Fast tests (always run)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run fast tests
+        run: |
+          python tools/test_runner.py --level fast
+
+  # Long tests (optional, Docker required)
+  long-tests:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_long_tests == 'true' || contains(github.event.head_commit.message, '[test-docker]')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run all tests including Docker
+        run: |
+          python tools/test_runner.py --level all --verbose
+
+  # Build and push Docker image
   build:
     runs-on: ubuntu-latest
     

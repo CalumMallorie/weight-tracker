@@ -12,6 +12,10 @@ from src.models import db, WeightEntry
 from src import services
 
 
+# Mark all tests in this file as unit tests (fast)
+pytestmark = pytest.mark.unit
+
+
 class TestEntriesAPI:
     """Test entries API endpoints"""
     

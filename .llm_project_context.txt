@@ -1,15 +1,15 @@
-    * Actively use git, e.g. branching for continous development and utilise tags sensibly.
-    * You, the llm, should actively add tests as often as possible.
+LLM INSTRUCTIONS:
+Actively use git, e.g. branching for continous development and utilise tags sensibly. Don't commit stuff to main randomly.
+You, the llm, should actively add tests as often as possible.
 
 
 Bugs:
-- [ ] Graph header is showing first entry rather than most recent 
-- [ ] Bottom of graph being cut off on mobile. Fixed by rotating landscape then back to portrait
+- [x] Bottom of graph being cut off on mobile. Fixed by rotating landscape then back to portrait ✅ FIXED: Increased plot margins, adjusted font sizes, changed overflow to visible, and increased mobile plot heights
 - [ ] Body weight always saves as zero, I have been having to go into 'edit database' to take measurements.
 
 
 Requests:
-- [ ] Save what exercise was most recently input
-- [ ] Always highlight body weight times reps on the graph
+- [ ] Persistance of selected exercise to plot
+- [ ] A highlighted point on the graph should always show the date, reps, and weight, (or one of the two)
 
 

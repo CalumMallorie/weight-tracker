@@ -109,7 +109,8 @@
             height: 400px;
             margin: 10px 0;
             width: 100%;
-            overflow: hidden;
+            overflow: visible;  /* Allow content to be visible instead of hidden */
+            min-height: 300px;  /* Minimum height to prevent excessive compression */
         }
         .last-entry {
             font-size: 24px;
@@ -363,7 +364,10 @@
             }
             /* Adjust plot height for mobile */
             .plot-container {
-                height: 300px;
+                height: 320px;          /* Slightly taller to prevent cutoff */
+                min-height: 320px;      /* Ensure minimum height */
+                margin: 15px 0;         /* More margin for better spacing */
+                overflow: visible;      /* Ensure content is not clipped */
             }
             .action-buttons {
                 margin-top: 15px;
@@ -378,7 +382,9 @@
         
         @media (max-width: 480px) {
             .plot-container {
-                height: 300px;
+                height: 340px;          /* Even taller for very small screens */
+                min-height: 340px;      /* Ensure minimum height */
+                margin: 20px 0;         /* More spacing on very small screens */
             }
             body {
                 padding: 10px;
@@ -588,9 +594,18 @@
             try {
                 Plotly.newPlot('weight-plot', plotData.data, plotData.layout, {
                     responsive: true,
-                    displayModeBar: false
+                    displayModeBar: false,
+                    scrollZoom: false,      /* Disable zoom scrolling on mobile */
+                    doubleClick: false,     /* Disable double-click reset */
+                    showTips: false,        /* Hide tips that might interfere */
+                    staticPlot: false       /* Keep interactive but controlled */
                 });
                 console.log("Plot created successfully");
+                
+                // Handle window resize for better mobile support
+                window.addEventListener('resize', function() {
+                    Plotly.Plots.resize('weight-plot');
+                });
             } catch (e) {
                 console.error("Error creating plot:", e);
                 document.getElementById('weight-plot').innerHTML = '<div style="color: red; padding: 20px;">Error creating plot: ' + e.message + '</div>';
