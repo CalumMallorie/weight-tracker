@@ -28,15 +28,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
-# Copy migration script
-COPY migrate_and_start.sh /migrate_and_start.sh
-RUN chmod +x /migrate_and_start.sh
-
 # Set correct permissions
 RUN chown -R weightapp:weightapp /app
 
 # Expose the app port
 EXPOSE 8080
 
-# Run the entrypoint script
-ENTRYPOINT ["/migrate_and_start.sh"] 
+# Switch to app user
+USER weightapp
+
+# Run the application directly (migrations handled by app startup)
+CMD ["python", "main.py"] 
