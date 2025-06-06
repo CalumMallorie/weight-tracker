@@ -6,6 +6,9 @@ db = SQLAlchemy()
 
 def format_date(dt: datetime) -> str:
     """Format a datetime object consistently across the app"""
+    if isinstance(dt, str):
+        # Handle case where dt is already a string (shouldn't happen, but defensive)
+        return dt.split(' ')[0] if ' ' in dt else dt
     return dt.strftime('%Y-%m-%d')
 
 class WeightCategory(db.Model):

@@ -100,10 +100,14 @@ def index():
             if body_weight_test or body_mass_test or test_notes_case:
                 if test_notes_case:
                     # When category_id_or_notes is a string, it's treated as notes
-                    services.save_weight_entry(float(weight_str) if weight_str else 0, unit, notes)
+                    test_weight = float(weight_str) if weight_str else 0
+                    services.save_weight_entry(test_weight, unit, notes)
                 elif body_mass_test:
-                    # For body mass test without reps
-                    services.save_weight_entry(float(weight_str), unit, category_id, None)
+                    # For body mass test without reps - validate weight first
+                    test_weight = float(weight_str) if weight_str else 0
+                    if test_weight <= 0:
+                        raise ValueError("Body weight must be greater than zero")
+                    services.save_weight_entry(test_weight, unit, category_id, None)
                 else:
                     # For body weight exercise tests
                     reps = int(reps_str) if reps_str else 10  # Default reps for test
@@ -130,8 +134,10 @@ def index():
                 except ValueError:
                     raise ValueError("Please enter a valid weight number")
                 
-                # Non-body weight exercises must have a valid weight unless it's body mass
-                if not is_body_mass_entry and not is_body_weight_entry and weight <= 0:
+                # Validate weight requirements based on entry type
+                if is_body_mass_entry and weight <= 0:
+                    raise ValueError("Body weight must be greater than zero")
+                elif not is_body_mass_entry and not is_body_weight_entry and weight <= 0:
                     raise ValueError("Weight must be greater than zero")
             
             # Handle reps based on entry type
