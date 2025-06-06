@@ -490,59 +490,82 @@ def create_weight_plot(
             labels={y_value: y_axis_label, 'date': 'Date'},
         )
         
-        # Add custom hover text
-        hovertemplate = 'Date: %{x}<br>'
+        # Enhanced hover information - always show comprehensive data
+        # Format date in hover template to be more readable
+        hovertemplate = 'Date: %{x|%Y-%m-%d}<br>'
+        
+        # Always show the plotted value first
+        if processing_type in ('volume', 'estimated_1rm', 'reps'):
+            hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
+        
+        # Always include weight and reps information when available
+        customdata_cols = []
         
         if is_body_weight:
-            if processing_type in ('volume', 'estimated_1rm', 'reps'):
-                hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
-                hovertemplate += 'Body Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
-                hovertemplate += 'Reps: %{customdata[2]}'
-            else:
-                hovertemplate += 'Body Weight: %{y:.1f} %{text}<br>'
-                hovertemplate += 'Reps: %{customdata[0]}'
-                
-            # For body weight exercises, display both body weight and reps in hover
+            # For body weight exercises, always show body weight and reps
+            hovertemplate += 'Body Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
+            customdata_cols = ['weight_original', 'unit']
+            
             if 'reps' in df.columns:
-                if processing_type in ('volume', 'estimated_1rm', 'reps'):
-                    customdata_cols = ['weight_original', 'unit', 'reps']
-                else:
-                    customdata_cols = ['reps']
-                fig.update_traces(
-                    customdata=df[customdata_cols],
-                    hovertemplate=hovertemplate + '<extra></extra>'
-                )
+                hovertemplate += 'Reps: %{customdata[2]}'
+                customdata_cols.append('reps')
+                
+        elif is_body_mass:
+            # For body mass, just show the weight (no reps)
+            if processing_type not in ('volume', 'estimated_1rm', 'reps'):
+                hovertemplate += 'Body Weight: %{y:.1f} %{text}'
             else:
-                fig.update_traces(
-                    text=df['unit'],
-                    hovertemplate=hovertemplate + '<extra></extra>'
-                )
-        elif processing_type in ('volume', 'estimated_1rm', 'reps') and not is_body_mass and 'reps' in df.columns:
-            hovertemplate += f'{y_axis_label}: %{{y:.1f}}<br>'
-            hovertemplate += 'Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
-            hovertemplate += 'Reps: %{customdata[2]}'
-            customdata_cols = ['weight_original', 'unit', 'reps']
+                hovertemplate += 'Body Weight: %{customdata[0]:.1f} %{customdata[1]}'
+                customdata_cols = ['weight_original', 'unit']
+                
+        else:
+            # For regular exercises, always show both weight and reps
+            hovertemplate += 'Weight: %{customdata[0]:.1f} %{customdata[1]}'
+            customdata_cols = ['weight_original', 'unit']
+            
+            if 'reps' in df.columns:
+                hovertemplate += '<br>Reps: %{customdata[2]}'
+                customdata_cols.append('reps')
+        
+        # Apply the hover template
+        if customdata_cols:
             fig.update_traces(
                 customdata=df[customdata_cols],
                 hovertemplate=hovertemplate + '<extra></extra>'
             )
         else:
-            hovertemplate += 'Weight: %{y:.1f} %{text}'
+            # Fallback for body mass when not using processed values
             fig.update_traces(
                 text=df['unit'], 
                 hovertemplate=hovertemplate + '<extra></extra>'
             )
         
-        # Customize appearance for better mobile experience
+        # Enhance plot markers for better visibility and interaction
+        fig.update_traces(
+            marker=dict(
+                size=8,  # Larger markers for better touch/click targets
+                line=dict(width=2, color='DarkSlateGrey'),  # Border around markers
+                opacity=0.8
+            ),
+            line=dict(width=2),  # Thicker line
+            hoverinfo='none',  # Use custom hovertemplate only
+        )
+        
+        # Customize appearance for better mobile experience and hover interaction
         fig.update_layout(
             plot_bgcolor='rgba(240,240,240,0.9)',
             font=dict(family="Arial, sans-serif", size=12),  # Reduce font size for mobile
-            hoverlabel=dict(bgcolor="white", font_size=12),
+            hoverlabel=dict(
+                bgcolor="white", 
+                font_size=12,
+                bordercolor="darkgray",
+                align="left"
+            ),
             margin=dict(l=40, r=20, t=20, b=50),  # Increase margins, especially bottom
             height=400,
             autosize=True,
             showlegend=False,  # Remove legend to save space
-            hovermode='closest',
+            hovermode='closest',  # Always show closest point info
             title=None,  # Explicitly remove title
         )
         

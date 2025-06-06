@@ -621,9 +621,82 @@
     {% endif %}
     
     <script>
+        // Persistence functionality using localStorage
+        function saveSelectedExercise(categoryId, processingType) {
+            try {
+                const preferences = {
+                    category: categoryId,
+                    processing: processingType || 'none',
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('weightTracker_preferences', JSON.stringify(preferences));
+                console.log('Saved exercise preferences:', preferences);
+            } catch (e) {
+                console.warn('Could not save preferences to localStorage:', e);
+            }
+        }
+        
+        function loadSelectedExercise() {
+            try {
+                const stored = localStorage.getItem('weightTracker_preferences');
+                if (stored) {
+                    const preferences = JSON.parse(stored);
+                    // Only use preferences if they're less than 30 days old
+                    if (Date.now() - preferences.timestamp < 30 * 24 * 60 * 60 * 1000) {
+                        return preferences;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load preferences from localStorage:', e);
+            }
+            return null;
+        }
+        
+        function applyPersistedSelections() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlCategory = urlParams.get('category');
+            const urlProcessing = urlParams.get('processing');
+            
+            // If URL has parameters, don't override them
+            if (urlCategory || urlProcessing) {
+                return;
+            }
+            
+            const preferences = loadSelectedExercise();
+            if (preferences) {
+                const currentUrl = new URL(window.location);
+                let redirect = false;
+                
+                // Apply category preference if not already set
+                if (!urlCategory && preferences.category) {
+                    currentUrl.searchParams.set('category', preferences.category);
+                    redirect = true;
+                }
+                
+                // Apply processing preference if not already set
+                if (!urlProcessing && preferences.processing && preferences.processing !== 'none') {
+                    currentUrl.searchParams.set('processing', preferences.processing);
+                    redirect = true;
+                }
+                
+                if (redirect) {
+                    console.log('Applying persisted preferences:', preferences);
+                    window.location = currentUrl.toString();
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         // Update category and reload page
         function updateCategory() {
             const categoryId = document.getElementById('main-category').value;
+            const processingType = document.getElementById('processing-filter') ? 
+                                 document.getElementById('processing-filter').value : 'none';
+            
+            // Save preference
+            saveSelectedExercise(categoryId, processingType);
+            
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('category', categoryId);
             window.location = currentUrl.toString();
@@ -632,6 +705,14 @@
         // Update processing type and reload page
         function updateProcessing() {
             const processingType = document.getElementById('processing-filter').value;
+            const categoryId = document.getElementById('main-category') ? 
+                              document.getElementById('main-category').value : null;
+            
+            // Save preference
+            if (categoryId) {
+                saveSelectedExercise(categoryId, processingType);
+            }
+            
             const currentUrl = new URL(window.location);
             
             if (processingType === 'body_mass') {
@@ -695,6 +776,11 @@
         
         // Rate limiting for form submissions
         document.addEventListener('DOMContentLoaded', function() {
+            // Apply persisted selections first (may redirect)
+            if (applyPersistedSelections()) {
+                return; // If redirecting, don't continue with initialization
+            }
+            
             let lastSubmitTime = 0;
             const SUBMIT_COOLDOWN = 2000; // 2 seconds
             
@@ -729,6 +815,14 @@
             const trackBodyWeightBtn = document.getElementById('track-body-weight-btn');
             if (trackBodyWeightBtn) {
                 trackBodyWeightBtn.addEventListener('click', openBodyWeightModal);
+            }
+            
+            // Save current selection when page loads (if not from persistence)
+            const categorySelect = document.getElementById('main-category');
+            const processingSelect = document.getElementById('processing-filter');
+            if (categorySelect && categorySelect.value) {
+                const processingType = processingSelect ? processingSelect.value : 'none';
+                saveSelectedExercise(categorySelect.value, processingType);
             }
         });
     </script>
