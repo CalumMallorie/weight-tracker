@@ -300,7 +300,17 @@ def api_create_entry():
     logger.info("API request to create a new entry")
     
     try:
-        data = request.json
+        # Check for proper content type
+        if not request.is_json:
+            return jsonify({'error': 'Content-Type must be application/json'}), 400
+        
+        try:
+            data = request.json
+        except Exception:
+            return jsonify({'error': 'Invalid JSON'}), 400
+            
+        if data is None:
+            return jsonify({'error': 'Invalid JSON'}), 400
         
         # Validate required fields
         if 'unit' not in data or 'category_id' not in data:
@@ -362,7 +372,10 @@ def api_delete_entry(entry_id):
     logger.info(f"API request to delete entry {entry_id}")
     success = services.delete_entry(entry_id)
     logger.info(f"Delete entry {entry_id} result: {success}")
-    return jsonify({'success': success})
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Entry not found'}), 404
 
 @api.route('/entries/<int:entry_id>', methods=['PUT'])
 def api_update_entry(entry_id):

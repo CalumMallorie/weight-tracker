@@ -1,5 +1,15 @@
-extra goals for this repo:
-    * Aim to have full test coverage. If you encounter an error that testing could have prevented, make a test.
-    * Use branching for continous development and utilise tags sensibly.
-    * After changes, rebuild and run the docker image and query it to make sure it works.
+    * Actively use git, e.g. branching for continous development and utilise tags sensibly.
+    * You, the llm, should actively add tests as often as possible.
+
+
+Bugs:
+- [ ] Graph header is showing first entry rather than most recent 
+- [ ] Bottom of graph being cut off on mobile. Fixed by rotating landscape then back to portrait
+- [ ] Body weight always saves as zero, I have been having to go into 'edit database' to take measurements.
+
+
+Requests:
+- [ ] Save what exercise was most recently input
+- [ ] Always highlight body weight times reps on the graph
+
 

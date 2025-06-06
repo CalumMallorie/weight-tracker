@@ -7,7 +7,7 @@ This directory contains helper scripts for developing and running the Weight Tra
 A convenience script that:
 - Starts the Flask app in development mode (debug=True, auto-reload enabled)
 - Automatically opens the app in your default browser
-- Runs on `http://localhost:5000` by default
+- Runs on `http://localhost:8080` by default
 
 ### Usage
 
@@ -22,7 +22,7 @@ chmod +x tools/launch_app.py
 
 ### Features
 
-- **Auto-browser opening**: Automatically opens `http://localhost:5000` in your default browser
+- **Auto-browser opening**: Automatically opens `http://localhost:8080` in your default browser
 - **Development mode**: Debug mode enabled with auto-reload on file changes  
 - **Clean output**: Formatted startup messages and graceful shutdown
 - **Error handling**: Proper error messages and exit codes
@@ -30,7 +30,7 @@ chmod +x tools/launch_app.py
 
 ### Environment Variables
 
-- `PORT`: Override the default port (5000)
+- `PORT`: Override the default port (8080)
 - `FLASK_DEBUG`: Set to 'false' to disable debug mode (defaults to 'true')
 
 ### Requirements

@@ -268,10 +268,14 @@ class TestEntriesManagement:
             
             html_content = response.get_data(as_text=True)
             
-            # More recent entry (110kg) should appear before older entry (100kg)
-            recent_pos = html_content.find('110')
-            old_pos = html_content.find('100')
+            # Look for the specific weight values in table data context
+            recent_pos = html_content.find('110.0 kg')
+            old_pos = html_content.find('100.0 kg')
             
+            # More recent entry (110kg) should appear before older entry (100kg)
             # If both are found, recent should come first (lower index)
             if recent_pos != -1 and old_pos != -1:
-                assert recent_pos < old_pos, "Recent entries should appear first" 
+                assert recent_pos < old_pos, "Recent entries should appear first"
+            else:
+                # If we can't find the specific patterns, the entries might not be displayed
+                assert False, f"Could not find weight entries in HTML. recent_pos={recent_pos}, old_pos={old_pos}" 

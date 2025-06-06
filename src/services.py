@@ -374,8 +374,20 @@ def create_weight_plot(
     """Create a plotly plot of weight entries"""
     try:
         if not entries:
-            logger.info("No entries to plot")
-            return None
+            logger.info("No entries to plot - creating empty plot")
+            # Create an empty plot for when there are no entries
+            fig = px.line(title="No data available")
+            fig.update_layout(
+                plot_bgcolor='rgba(240,240,240,0.9)',
+                font=dict(family="Arial, sans-serif", size=14),
+                margin=dict(l=10, r=10, t=10, b=10),
+                height=400,
+                autosize=True,
+                title=None,
+                xaxis=dict(title="Date"),
+                yaxis=dict(title="Weight")
+            )
+            return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             
         # Get category from first entry
         category = entries[0].category if entries[0].category else None

@@ -303,4 +303,4 @@ class TestProcessingTypesAPI:
             
             data = json.loads(response.data)
             assert isinstance(data, list)
-            assert 'none' in data  # Should include basic processing types 
+            assert any(item['id'] == 'none' for item in data)  # Should include basic processing types 

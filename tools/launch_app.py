@@ -37,9 +37,9 @@ def main() -> None:
     """Launch the app and open browser."""
     # Set development environment variables
     os.environ['FLASK_DEBUG'] = 'true'
-    os.environ.setdefault('PORT', '5000')
+    os.environ.setdefault('PORT', '8080')
     
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8080))
     url = f"http://localhost:{port}"
     
     print("=" * 50)

@@ -573,10 +573,9 @@
         </div>
     
         <div class="last-entry">
-            Last Entry: 
-            Latest: {{ entries[-1].weight }} {{ entries[-1].unit }}
-            {% if entries[-1].reps and not selected_category.is_body_mass %}
-                ({{ entries[-1].reps }} reps)
+            Latest: {{ entries[0].weight }} {{ entries[0].unit }}
+            {% if entries[0].reps and not selected_category.is_body_mass %}
+                ({{ entries[0].reps }} reps)
             {% endif %}
         </div>
         
