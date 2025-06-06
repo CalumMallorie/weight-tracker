@@ -9,7 +9,7 @@ Bugs:
 
 
 Requests:
-- [ ] Persistance of selected exercise to plot
-- [ ] A highlighted point on the graph should always show the date, reps, and weight, (or one of the two)
+- [x] Persistance of selected exercise to plot ✅ IMPLEMENTED: Added localStorage persistence for selected exercise and processing type with 30-day expiration
+- [x] A highlighted point on the graph should always show the date, reps, and weight, (or one of the two) ✅ IMPLEMENTED: Enhanced hover information to consistently show date, weight, and reps with improved formatting and larger markers
 
 
