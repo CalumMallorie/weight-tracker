@@ -135,6 +135,12 @@ def save_weight_entry(
             reps = 1
     
     logger.info(f"Saving new weight entry: {weight}{unit}, category: {category.name}, reps: {reps}")
+    logger.debug(f"Weight parameter type: {type(weight)}, value: {weight}")
+    
+    # Final validation: prevent zero weights for body mass entries
+    if category.is_body_mass and weight <= 0:
+        logger.error(f"CRITICAL: Attempted to save body mass entry with zero weight! weight={weight}, category={category.name}")
+        raise ValueError(f"Body mass entries cannot have zero weight. Received weight: {weight}")
     
     try:
         # Check columns exist using introspection to avoid errors with older database schemas
