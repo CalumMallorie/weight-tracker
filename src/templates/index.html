@@ -508,7 +508,7 @@
                     {% if not category.is_body_mass %}
                     <option value="{{ category.id }}" 
                             data-is-body-mass="{% if category.is_body_mass %}true{% else %}false{% endif %}"
-                            data-is-body-weight="{% if category.is_body_weight %}true{% else %}false{% endif %}"
+                            data-is-body-weight-exercise="{% if category.is_body_weight_exercise %}true{% else %}false{% endif %}"
                             {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
                         {{ category.name }}
                     </option>
@@ -732,7 +732,7 @@
             const categorySelect = document.getElementById('main-category');
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
             const isBodyMass = selectedOption.getAttribute('data-is-body-mass') === 'true';
-            const isBodyWeight = selectedOption.getAttribute('data-is-body-weight') === 'true';
+            const isBodyWeight = selectedOption.getAttribute('data-is-body-weight-exercise') === 'true';
             
             const weightField = document.getElementById('weight-field');
             const repsField = document.getElementById('main-reps-field');

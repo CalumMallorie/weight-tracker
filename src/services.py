@@ -100,17 +100,17 @@ def save_weight_entry(
         logger.error(f"Category with ID {category_id} not found")
         raise ValueError(f"Category with ID {category_id} not found")
     
-    # Check if 'is_body_weight' attribute exists to ensure backward compatibility
-    is_body_weight = False
-    if hasattr(category, 'is_body_weight'):
-        is_body_weight = category.is_body_weight
+    # Check if 'is_body_weight_exercise' attribute exists to ensure backward compatibility
+    is_body_weight_exercise = False
+    if hasattr(category, 'is_body_weight_exercise'):
+        is_body_weight_exercise = category.is_body_weight_exercise
     
     if category.is_body_mass:
         # Body Mass: ensure no reps
         if reps is not None:
             logger.warning("Body Mass entries should not have reps, ignoring reps value")
             reps = None
-    elif is_body_weight:
+    elif is_body_weight_exercise:
         # Body Weight exercise: ensure has reps but use body mass for weight
         if reps is None:
             logger.warning("Body Weight exercises should have reps, defaulting to 1")
@@ -226,17 +226,17 @@ def update_entry(
         logger.error(f"Category with ID {category_id} not found")
         raise ValueError(f"Category with ID {category_id} not found")
     
-    # Check if 'is_body_weight' attribute exists to ensure backward compatibility
-    is_body_weight = False
-    if hasattr(category, 'is_body_weight'):
-        is_body_weight = category.is_body_weight
+    # Check if 'is_body_weight_exercise' attribute exists to ensure backward compatibility
+    is_body_weight_exercise = False
+    if hasattr(category, 'is_body_weight_exercise'):
+        is_body_weight_exercise = category.is_body_weight_exercise
     
     if category.is_body_mass:
         # Body Mass: ensure no reps
         if reps is not None:
             logger.warning("Body Mass entries should not have reps, ignoring reps value")
             reps = None
-    elif is_body_weight:
+    elif is_body_weight_exercise:
         # Body Weight exercise: ensure has reps but use body mass for weight
         if reps is None:
             logger.warning("Body Weight exercises should have reps, defaulting to 1")
@@ -401,12 +401,12 @@ def create_weight_plot(
         
         # Determine if this is body mass or body weight exercise
         is_body_mass = False
-        is_body_weight = False
+        is_body_weight_exercise = False
         
         if category:
             is_body_mass = category.is_body_mass if hasattr(category, 'is_body_mass') else False
-            if hasattr(category, 'is_body_weight'):
-                is_body_weight = category.is_body_weight
+            if hasattr(category, 'is_body_weight_exercise'):
+                is_body_weight_exercise = category.is_body_weight_exercise
         
         # Convert entries to pandas DataFrame
         data = []
@@ -435,7 +435,7 @@ def create_weight_plot(
         # Create more specific y-axis label based on the category and processing type
         if is_body_mass:
             y_axis_label = f'Body Weight ({default_unit})'
-        elif is_body_weight:
+        elif is_body_weight_exercise:
             if processing_type == 'volume':
                 y_axis_label = f'{category_name} Volume (Body Weight × Reps)'
             elif processing_type == 'estimated_1rm':
@@ -507,7 +507,7 @@ def create_weight_plot(
         # Always include weight and reps information when available
         customdata_cols = []
         
-        if is_body_weight:
+        if is_body_weight_exercise:
             # For body weight exercises, always show body weight and reps
             hovertemplate += 'Body Weight: %{customdata[0]:.1f} %{customdata[1]}<br>'
             customdata_cols = ['weight_original', 'unit']

@@ -42,6 +42,7 @@ def check_and_migrate_database() -> None:
         else:
             # Apply subsequent migrations as needed
             migrate_db_v6()  # Add is_body_weight column
+            migrate_db_v7()  # Rename is_body_weight to is_body_weight_exercise
             
         logger.info("Database schema check and migrations completed")
     except Exception as e:
@@ -370,6 +371,81 @@ def migrate_db_v6() -> None:
             connection.close()
             
     logger.info("Database migration v6 completed successfully")
+
+def migrate_db_v7() -> None:
+    """Rename is_body_weight column to is_body_weight_exercise for clarity"""
+    logger.info("Migrating database to v7: Renaming is_body_weight to is_body_weight_exercise")
+    
+    try:
+        # Get SQLite connection
+        connection = db.engine.raw_connection()
+        cursor = connection.cursor()
+        
+        # Check current table structure
+        cursor.execute("PRAGMA table_info(weight_category)")
+        columns = cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        # Check if we need to do the migration
+        if "is_body_weight_exercise" in column_names:
+            logger.info("is_body_weight_exercise column already exists, skipping migration")
+            return
+            
+        if "is_body_weight" not in column_names:
+            logger.info("is_body_weight column not found, skipping migration")
+            return
+        
+        logger.info("Performing column rename migration...")
+        
+        # SQLite doesn't support column rename directly, so we need to:
+        # 1. Add new column
+        # 2. Copy data
+        # 3. Drop old column (by recreating table)
+        
+        # Step 1: Add new column
+        cursor.execute("ALTER TABLE weight_category ADD COLUMN is_body_weight_exercise BOOLEAN DEFAULT 0")
+        
+        # Step 2: Copy data from old to new column
+        cursor.execute("UPDATE weight_category SET is_body_weight_exercise = is_body_weight")
+        
+        # Step 3: Get all current data
+        cursor.execute("""
+            SELECT id, name, is_body_mass, is_body_weight_exercise, created_at, last_used_at 
+            FROM weight_category
+        """)
+        categories = cursor.fetchall()
+        
+        # Step 4: Recreate table without old column
+        cursor.execute("DROP TABLE weight_category")
+        
+        cursor.execute("""
+            CREATE TABLE weight_category (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR(50) NOT NULL UNIQUE,
+                is_body_mass BOOLEAN DEFAULT 0,
+                is_body_weight_exercise BOOLEAN DEFAULT 0,
+                created_at DATETIME,
+                last_used_at DATETIME
+            )
+        """)
+        
+        # Step 5: Restore data
+        for cat in categories:
+            cursor.execute("""
+                INSERT INTO weight_category 
+                (id, name, is_body_mass, is_body_weight_exercise, created_at, last_used_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, cat)
+        
+        connection.commit()
+        logger.info("Database migration v7 completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in migration v7: {str(e)}")
+        raise
+    finally:
+        if connection:
+            connection.close()
 
 def _check_weight_entry_schema(inspector) -> List[tuple]:
     """Check weight_entry table schema for missing columns"""

@@ -235,7 +235,7 @@ class TestCategoriesAPI:
         with app.app_context():
             category_data = {
                 'name': 'Test Exercise',
-                'is_body_weight': False
+                'is_body_weight_exercise': False
             }
             
             response = client.post('/api/categories',
@@ -250,7 +250,7 @@ class TestCategoriesAPI:
         """Creating category without name should return error"""
         with app.app_context():
             category_data = {
-                'is_body_weight': False
+                'is_body_weight_exercise': False
             }
             
             response = client.post('/api/categories',

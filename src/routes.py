@@ -43,9 +43,9 @@ def index():
     selected_category = next((c for c in categories if c.id == selected_category_id), None)
     
     # Check if the category is a body weight exercise
-    is_body_weight = False
-    if selected_category and hasattr(selected_category, 'is_body_weight'):
-        is_body_weight = selected_category.is_body_weight
+    is_body_weight_exercise = False
+    if selected_category and hasattr(selected_category, 'is_body_weight_exercise'):
+        is_body_weight_exercise = selected_category.is_body_weight_exercise
 
     # Get processing type from request or default to 'none'
     processing_type = request.args.get('processing', 'none')
@@ -95,7 +95,7 @@ def index():
             is_body_mass_entry = category and category.is_body_mass
                 
             # Check if this is a body weight exercise
-            is_body_weight_entry = category and category.is_body_weight
+            is_body_weight_exercise_entry = category and category.is_body_weight_exercise
             
             # Debug logging for form data parsing
             logger.info(f"Form submission - Raw form data: {dict(request.form)}")
@@ -107,13 +107,13 @@ def index():
             logger.info(f"Form parsing - category: {category.name if category else 'None'}")
             logger.info(f"Form parsing - reps_str: '{reps_str}'")
             logger.info(f"Form parsing - is_body_mass_entry: {is_body_mass_entry}")
-            logger.info(f"Form parsing - is_body_weight_entry: {is_body_weight_entry}")
+            logger.info(f"Form parsing - is_body_weight_exercise_entry: {is_body_weight_exercise_entry}")
             
             # Special case for test_body_weight_exercise_* tests
             # Detect if this is one of the test cases for body weight exercises
             body_weight_test = (
                 in_test and 
-                is_body_weight_entry and
+                is_body_weight_exercise_entry and
                 ((not weight_str) or (weight_str == '0') or (weight_str == ''))
             )
             
@@ -158,7 +158,7 @@ def index():
             
             # Normal case (not special test handling)
             # Weight handling
-            if is_body_weight_entry:
+            if is_body_weight_exercise_entry:
                 # For body weight exercises, weight will be auto-filled with body mass
                 # Just set to 0 and let the service handle it
                 weight = 0
@@ -193,7 +193,7 @@ def index():
                 if is_body_mass_entry and weight <= 0:
                     logger.debug(f"Body mass entry validation failed: weight={weight} <= 0")
                     raise ValueError("Body weight must be greater than zero")
-                elif not is_body_mass_entry and not is_body_weight_entry and weight <= 0:
+                elif not is_body_mass_entry and not is_body_weight_exercise_entry and weight <= 0:
                     logger.debug(f"Regular exercise entry validation failed: weight={weight} <= 0")
                     raise ValueError("Weight must be greater than zero")
             
@@ -203,7 +203,7 @@ def index():
                 reps = None
             else:
                 # For body weight exercises, reps is required
-                if is_body_weight_entry and not reps_str:
+                if is_body_weight_exercise_entry and not reps_str:
                     # Default to 1 rep for tests
                     if in_test:
                         reps = 1
@@ -259,7 +259,7 @@ def index():
                 selected_processing=processing_type,
                 body_mass_category_id=body_mass_category_id,
                 last_body_mass_entry=last_body_mass_entry,
-                is_body_weight=is_body_weight
+                is_body_weight_exercise=is_body_weight_exercise
             )
     
     # Handle GET request
@@ -279,7 +279,7 @@ def index():
         selected_processing=processing_type,
         body_mass_category_id=body_mass_category_id,
         last_body_mass_entry=last_body_mass_entry,
-        is_body_weight=is_body_weight
+        is_body_weight_exercise=is_body_weight_exercise
     )
 
 @main.route('/entries', methods=['GET'])
@@ -317,16 +317,16 @@ def manage_categories():
         
         # Set flags based on the category_type
         is_body_mass = (category_type == 'body_mass')
-        is_body_weight = (category_type == 'body_weight')
+        is_body_weight_exercise = (category_type == 'body_weight')
         
         if name:
             try:
                 # Create the category with the appropriate flags
                 category = services.get_or_create_category(name, is_body_mass=is_body_mass)
                 
-                # Set is_body_weight flag if the column exists (for backward compatibility)
-                if hasattr(category, 'is_body_weight'):
-                    category.is_body_weight = is_body_weight
+                # Set is_body_weight_exercise flag if the column exists (for backward compatibility)
+                if hasattr(category, 'is_body_weight_exercise'):
+                    category.is_body_weight_exercise = is_body_weight_exercise
                     services.db.session.commit()
                 
                 logger.info(f"Category '{name}' created/updated successfully (type: {category_type})")
@@ -383,16 +383,16 @@ def api_create_entry():
         category_id = int(data['category_id'])
         category = next((c for c in services.get_all_categories() if c.id == category_id), None)
         
-        is_body_weight = False
-        if category and hasattr(category, 'is_body_weight'):
-            is_body_weight = category.is_body_weight
+        is_body_weight_exercise = False
+        if category and hasattr(category, 'is_body_weight_exercise'):
+            is_body_weight_exercise = category.is_body_weight_exercise
         
         is_body_mass = False
         if category and hasattr(category, 'is_body_mass'):
             is_body_mass = category.is_body_mass
         
         # Weight handling
-        if is_body_weight:
+        if is_body_weight_exercise:
             # For body weight exercises, always set weight to 0 (will use body mass)
             weight = 0
         elif 'weight' not in data:
@@ -401,7 +401,7 @@ def api_create_entry():
             weight = float(data.get('weight', 0))
         
         # For non-body weight and non-body mass exercises, validate weight > 0
-        if not is_body_weight and not is_body_mass and weight <= 0:
+        if not is_body_weight_exercise and not is_body_mass and weight <= 0:
             return jsonify({'error': 'Weight must be greater than zero for regular exercises'}), 400
         
         unit = data['unit']
@@ -468,9 +468,9 @@ def api_update_entry(entry_id):
         categories = services.get_all_categories()
         category = next((c for c in categories if c.id == category_id), None)
         
-        is_body_weight = False
-        if category and hasattr(category, 'is_body_weight'):
-            is_body_weight = category.is_body_weight
+        is_body_weight_exercise = False
+        if category and hasattr(category, 'is_body_weight_exercise'):
+            is_body_weight_exercise = category.is_body_weight_exercise
         
         is_body_mass = False
         if category and hasattr(category, 'is_body_mass'):
@@ -481,13 +481,13 @@ def api_update_entry(entry_id):
             weight = float(data['weight'])
         else:
             # For body weight exercises, weight will be set to 0 and replaced with body mass
-            if is_body_weight:
+            if is_body_weight_exercise:
                 weight = 0
             else:
                 weight = current_entry.weight
         
         # For non-body weight and non-body mass exercises, validate weight > 0
-        if not is_body_weight and not is_body_mass and weight <= 0:
+        if not is_body_weight_exercise and not is_body_mass and weight <= 0:
             return jsonify({'error': 'Weight must be greater than zero for regular exercises'}), 400
         
         # Reps handling
@@ -495,7 +495,7 @@ def api_update_entry(entry_id):
             if data['reps'] is None and is_body_mass:
                 reps = None  # Body mass entries don't have reps
             elif data['reps'] is None or data['reps'] <= 0:
-                if is_body_weight:
+                if is_body_weight_exercise:
                     # Body weight exercises require reps
                     return jsonify({'error': 'Reps are required and must be greater than 0 for body weight exercises'}), 400
                 elif not is_body_mass:
@@ -541,11 +541,11 @@ def api_create_category():
     """API endpoint to create a new category"""
     data = request.json
     name = data.get('name', '').strip()
-    is_body_weight = data.get('is_body_weight', False)
+    is_body_weight_exercise = data.get('is_body_weight_exercise', False)
     
     if name:
         try:
-            category = services.get_or_create_category(name, is_body_mass=is_body_weight)
+            category = services.get_or_create_category(name, is_body_mass=is_body_weight_exercise)
             return jsonify(category.to_dict())
         except Exception as e:
             return jsonify({'error': str(e)}), 400

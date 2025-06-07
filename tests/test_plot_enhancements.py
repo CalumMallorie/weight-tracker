@@ -41,8 +41,8 @@ def test_enhanced_hover_information_body_weight_exercise(app):
         
         # Create a body weight exercise category
         category = get_or_create_category("Push-ups", is_body_mass=False)
-        if hasattr(category, 'is_body_weight'):
-            category.is_body_weight = True
+        if hasattr(category, 'is_body_weight_exercise'):
+            category.is_body_weight_exercise = True
             from src import services
             services.db.session.commit()
         

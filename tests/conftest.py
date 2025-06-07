@@ -52,8 +52,8 @@ def sample_categories(app):
         }
         
         # Set up body weight exercise
-        if hasattr(categories['pushups'], 'is_body_weight'):
-            categories['pushups'].is_body_weight = True
+        if hasattr(categories['pushups'], 'is_body_weight_exercise'):
+            categories['pushups'].is_body_weight_exercise = True
             db.session.commit()
         
         # Refresh to ensure they're properly bound to session
