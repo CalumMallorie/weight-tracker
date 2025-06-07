@@ -43,6 +43,7 @@ def check_and_migrate_database() -> None:
             # Apply subsequent migrations as needed
             migrate_db_v6()  # Add is_body_weight column
             migrate_db_v7()  # Rename is_body_weight to is_body_weight_exercise
+            migrate_db_v8()  # Fix Body Mass category corruption
             
         logger.info("Database schema check and migrations completed")
     except Exception as e:
@@ -497,11 +498,115 @@ def _check_weight_category_schema(inspector) -> List[tuple]:
     logger.info(f"Missing columns in weight_category: {missing_columns}")
     return missing_columns
 
+def migrate_db_v8() -> None:
+    """Fix Body Mass category corruption - ensure it only has is_body_mass=True"""
+    logger.info("Migrating database to v8: Fix Body Mass category corruption")
+    
+    try:
+        # Get SQLite connection
+        connection = db.engine.raw_connection()
+        cursor = connection.cursor()
+        
+        # Check for Body Mass category with corrupted flags
+        cursor.execute("""
+            SELECT id, name, is_body_mass, is_body_weight_exercise 
+            FROM weight_category 
+            WHERE name = 'Body Mass'
+        """)
+        result = cursor.fetchone()
+        
+        if result:
+            cat_id, name, is_body_mass, is_body_weight_exercise = result
+            logger.info(f"Found Body Mass category (ID: {cat_id})")
+            logger.info(f"  Current state: is_body_mass={is_body_mass}, is_body_weight_exercise={is_body_weight_exercise}")
+            
+            # Check if it has the corruption (both flags True)
+            if is_body_mass and is_body_weight_exercise:
+                logger.warning("🚨 CRITICAL BUG DETECTED: Body Mass category has both flags set to True!")
+                logger.warning("This causes weight entries to save as 0 instead of submitted weight.")
+                logger.info("🔧 Applying automatic fix...")
+                
+                # Fix the corruption
+                cursor.execute("""
+                    UPDATE weight_category 
+                    SET is_body_weight_exercise = 0 
+                    WHERE id = ? AND name = 'Body Mass'
+                """, (cat_id,))
+                
+                connection.commit()
+                
+                # Verify the fix
+                cursor.execute("""
+                    SELECT is_body_mass, is_body_weight_exercise 
+                    FROM weight_category 
+                    WHERE id = ?
+                """, (cat_id,))
+                new_result = cursor.fetchone()
+                
+                if new_result:
+                    new_is_body_mass, new_is_body_weight_exercise = new_result
+                    if new_is_body_mass and not new_is_body_weight_exercise:
+                        logger.info("✅ Body Mass category corruption fixed successfully!")
+                        logger.info("Weight entries should now save correctly.")
+                    else:
+                        logger.error("❌ Failed to fix Body Mass category corruption!")
+                        raise Exception("Body Mass category fix verification failed")
+                
+            elif is_body_mass and not is_body_weight_exercise:
+                logger.info("✅ Body Mass category is already correctly configured")
+            else:
+                logger.warning(f"⚠️  Body Mass category has unexpected configuration:")
+                logger.warning(f"   is_body_mass={is_body_mass}, is_body_weight_exercise={is_body_weight_exercise}")
+                # Don't fail the migration for unexpected configs, just log it
+        else:
+            logger.info("Body Mass category not found - this might be a fresh installation")
+        
+        # Add database triggers to prevent future corruption
+        logger.info("Adding database triggers to prevent future corruption...")
+        
+        # Drop triggers if they exist
+        cursor.execute("DROP TRIGGER IF EXISTS check_category_flags_update")
+        cursor.execute("DROP TRIGGER IF EXISTS check_category_flags_insert")
+        
+        # Create trigger to prevent both flags being True on UPDATE
+        cursor.execute("""
+            CREATE TRIGGER check_category_flags_update
+            BEFORE UPDATE ON weight_category
+            FOR EACH ROW
+            WHEN NEW.is_body_mass = 1 AND NEW.is_body_weight_exercise = 1
+            BEGIN
+                SELECT RAISE(ABORT, 'Category cannot be both body_mass and body_weight_exercise');
+            END
+        """)
+        
+        # Create trigger to prevent both flags being True on INSERT
+        cursor.execute("""
+            CREATE TRIGGER check_category_flags_insert
+            BEFORE INSERT ON weight_category
+            FOR EACH ROW
+            WHEN NEW.is_body_mass = 1 AND NEW.is_body_weight_exercise = 1
+            BEGIN
+                SELECT RAISE(ABORT, 'Category cannot be both body_mass and body_weight_exercise');
+            END
+        """)
+        
+        connection.commit()
+        logger.info("✅ Database triggers created to prevent future corruption")
+        logger.info("Database migration v8 completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in migration v8: {str(e)}")
+        raise
+    finally:
+        if connection:
+            connection.close()
+
 # Update migrations list
 MIGRATIONS = [
     migrate_db_v1,
     migrate_db_v2,
     migrate_db_v3,
     migrate_db_v4,
-    migrate_db_v5
+    migrate_db_v5,
+    migrate_db_v8
 ] 
