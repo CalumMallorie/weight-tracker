@@ -57,15 +57,38 @@ def index():
         # Check if we're in test mode
         in_test = "PYTEST_CURRENT_TEST" in os.environ
         
+        # Log environment information for debugging Docker issues
+        logger.info(f"Request environment - Content-Type: {request.content_type}")
+        logger.info(f"Request environment - Content-Length: {request.content_length}")
+        logger.info(f"Request environment - User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logger.info(f"Request environment - Accept-Encoding: {request.headers.get('Accept-Encoding', 'Unknown')}")
+        logger.info(f"Request environment - in_test: {in_test}")
+        
         try:
-            # Parse form data
-            weight_str = request.form.get('weight', '')
-            unit = request.form.get('unit', 'kg')
-            category_id = int(request.form.get('category', 0))
-            reps_str = request.form.get('reps', '')
-            notes = request.form.get('notes', '')
+            # Parse form data with fallback mechanisms
+            weight_str = request.form.get('weight', '').strip()
+            # Fallback: check for alternative weight field names that might be used
+            if not weight_str:
+                weight_str = request.form.get('body-weight', '').strip()
+            if not weight_str:
+                weight_str = request.form.get('main-weight', '').strip()
             
-            # Get the selected category
+            unit = request.form.get('unit', 'kg').strip()
+            # Fallback for unit field
+            if not unit or unit == 'kg':  # Default fallback
+                unit_fallback = request.form.get('body-weight-unit', '').strip()
+                if unit_fallback:
+                    unit = unit_fallback
+                else:
+                    unit_fallback = request.form.get('main-unit', '').strip()
+                    if unit_fallback:
+                        unit = unit_fallback
+            
+            category_id = int(request.form.get('category', 0))
+            reps_str = request.form.get('reps', '').strip()
+            notes = request.form.get('notes', '').strip()
+            
+            # Get the selected category first
             category = next((c for c in categories if c.id == category_id), None)
             
             # Check if this is a body mass entry
@@ -73,6 +96,18 @@ def index():
                 
             # Check if this is a body weight exercise
             is_body_weight_entry = category and category.is_body_weight
+            
+            # Debug logging for form data parsing
+            logger.info(f"Form submission - Raw form data: {dict(request.form)}")
+            logger.info(f"Form parsing - weight_str: '{weight_str}' (type: {type(weight_str)}, len: {len(weight_str)})")
+            logger.info(f"Form parsing - weight_str repr: {repr(weight_str)}")
+            logger.info(f"Form parsing - weight_str bytes: {weight_str.encode('utf-8') if weight_str else b''}")
+            logger.info(f"Form parsing - unit: '{unit}'")
+            logger.info(f"Form parsing - category_id: {category_id}")
+            logger.info(f"Form parsing - category: {category.name if category else 'None'}")
+            logger.info(f"Form parsing - reps_str: '{reps_str}'")
+            logger.info(f"Form parsing - is_body_mass_entry: {is_body_mass_entry}")
+            logger.info(f"Form parsing - is_body_weight_entry: {is_body_weight_entry}")
             
             # Special case for test_body_weight_exercise_* tests
             # Detect if this is one of the test cases for body weight exercises
@@ -130,14 +165,36 @@ def index():
             else:
                 # For non-body weight exercises, validate the weight if provided
                 try:
-                    weight = float(weight_str) if weight_str else 0
-                except ValueError:
-                    raise ValueError("Please enter a valid weight number")
+                    if weight_str:
+                        # Handle potential locale-specific decimal separators and encoding issues
+                        # Remove any non-numeric characters except decimal separators
+                        import re
+                        # First, handle common decimal separators
+                        weight_str_normalized = weight_str.replace(',', '.')
+                        # Remove any characters that aren't digits, dots, or minus signs
+                        weight_str_cleaned = re.sub(r'[^\d\.\-]', '', weight_str_normalized)
+                        logger.info(f"Weight conversion - original: '{weight_str}' -> normalized: '{weight_str_normalized}' -> cleaned: '{weight_str_cleaned}'")
+                        
+                        if weight_str_cleaned:
+                            weight = float(weight_str_cleaned)
+                            logger.info(f"Weight conversion - final float value: {weight}")
+                        else:
+                            logger.warning(f"Weight string became empty after cleaning: '{weight_str}' -> '{weight_str_cleaned}'")
+                            weight = 0
+                    else:
+                        weight = 0
+                        logger.info(f"Weight conversion - empty string, defaulting to: {weight}")
+                    logger.info(f"Weight conversion result - weight: {weight} (type: {type(weight)})")
+                except ValueError as ve:
+                    logger.error(f"Failed to convert weight_str '{weight_str}' to float: {ve}")
+                    raise ValueError(f"Please enter a valid weight number. Got: '{weight_str}'")
                 
                 # Validate weight requirements based on entry type
                 if is_body_mass_entry and weight <= 0:
+                    logger.debug(f"Body mass entry validation failed: weight={weight} <= 0")
                     raise ValueError("Body weight must be greater than zero")
                 elif not is_body_mass_entry and not is_body_weight_entry and weight <= 0:
+                    logger.debug(f"Regular exercise entry validation failed: weight={weight} <= 0")
                     raise ValueError("Weight must be greater than zero")
             
             # Handle reps based on entry type

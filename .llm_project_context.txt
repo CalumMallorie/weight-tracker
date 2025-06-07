@@ -2,6 +2,13 @@ LLM INSTRUCTIONS:
 Actively use git, e.g. branching for continous development and utilise tags when main is updated meaningfully. Don't commit stuff to main randomly.
 You, the llm, should actively add tests as often as possible.
 
+TAGGING RULES:
+- Create semantic version tags (v1.0.0, v1.1.0, v1.0.1) when merging to main
+- Use MAJOR version for breaking changes or major new features
+- Use MINOR version for new features and significant bug fixes
+- Use PATCH version for small bug fixes and minor improvements
+- Tag format: "v{MAJOR}.{MINOR}.{PATCH}" with descriptive commit message
+- Always tag after successful merge to main with comprehensive testing
 
 Bugs:
 - [x] Bottom of graph being cut off on mobile. Fixed by rotating landscape then back to portrait ✅ FIXED: Increased plot margins, adjusted font sizes, changed overflow to visible, and increased mobile plot heights
