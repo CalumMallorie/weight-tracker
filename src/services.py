@@ -443,6 +443,10 @@ def create_weight_plot(
             
         df = pd.DataFrame(data)
         
+        # Ensure date column is properly converted to pandas datetime
+        if not df.empty:
+            df['date'] = pd.to_datetime(df['date'])
+        
         # Sort by date
         df = df.sort_values('date')
         
