@@ -385,7 +385,12 @@ def api_create_entry():
         except (ValueError, TypeError):
             return jsonify({'error': 'Category ID must be a valid integer'}), 400
             
-        category = next((c for c in services.get_all_categories() if c.id == category_id), None)
+        # Get category safely with error handling for concurrent access
+        try:
+            categories = services.get_all_categories()
+            category = next((c for c in categories if c.id == category_id), None)
+        except Exception:
+            category = None
         
         is_body_weight_exercise = False
         if category and hasattr(category, 'is_body_weight_exercise'):
@@ -484,8 +489,11 @@ def api_update_entry(entry_id):
         unit = data.get('unit', current_entry.unit)
         
         # Get the category to check if it's a body weight exercise
-        categories = services.get_all_categories()
-        category = next((c for c in categories if c.id == category_id), None)
+        try:
+            categories = services.get_all_categories()
+            category = next((c for c in categories if c.id == category_id), None)
+        except Exception:
+            category = None
         
         is_body_weight_exercise = False
         if category and hasattr(category, 'is_body_weight_exercise'):
