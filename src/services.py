@@ -181,6 +181,10 @@ def save_weight_entry(
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error saving weight entry: {str(e)}")
+        # Handle database errors gracefully
+        from sqlalchemy.exc import OperationalError, IntegrityError
+        if isinstance(e, (OperationalError, IntegrityError)):
+            raise ValueError(f"Database operation failed: {str(e)}")
         raise
 
 def delete_entry(entry_id: int) -> bool:
@@ -280,6 +284,10 @@ def update_entry(
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error updating entry: {str(e)}")
+        # Handle database errors gracefully
+        from sqlalchemy.exc import OperationalError, IntegrityError
+        if isinstance(e, (OperationalError, IntegrityError)):
+            raise ValueError(f"Database operation failed: {str(e)}")
         raise
 
 def get_entries_by_time_window(
