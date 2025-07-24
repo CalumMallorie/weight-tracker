@@ -57,7 +57,7 @@ jobs:
           python tools/test_runner.py --level fast
           
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: fast-test-results
@@ -100,7 +100,7 @@ jobs:
           bandit -r src/ -f json -o bandit-report.json || true
           
       - name: Upload security results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-results
@@ -139,7 +139,7 @@ jobs:
           python tools/test_runner.py --level all --verbose
           
       - name: Upload comprehensive test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: comprehensive-test-results
