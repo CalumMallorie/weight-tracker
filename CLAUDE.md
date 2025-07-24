@@ -70,22 +70,36 @@ The application tracks weight entries across different categories:
 - **Check git status**: Use `git status` and `git diff` to review changes before committing
 
 ### CI Pipeline Awareness
-The repository has automated GitHub Actions that trigger on every push and PR:
+The repository has an optimized GitHub Actions pipeline that ensures quality and security:
 
-#### Automated Testing
-- **Fast tests**: Run automatically on every push/PR (~30 seconds)
-- **Long tests**: Triggered by:
+#### Automated Testing (Required for Merge)
+- **Fast tests**: Run automatically on every PR (~2-3 minutes)
+  - Unit tests, API tests, security tests
+  - Uses pip caching for speed
+  - Must pass to merge
+- **Security scanning**: Runs in parallel with tests
+  - Dependency vulnerability scanning with `safety`
+  - Static code analysis with `bandit`
+  - Security-focused test suite
+- **Comprehensive tests**: Triggered by:
   - Manual workflow dispatch with "Run long tests" checkbox
   - Commit messages containing `[test-docker]`
+  - Pushes to main branch
   - Include Docker builds and integration tests (~5-15 minutes)
 
-#### Automated Docker Building
-- **Multi-platform builds**: Automatically builds for `linux/amd64` and `linux/arm64`
+#### Automated Docker Building (Smart Conditional)
+- **Conditional builds**: Only builds when code changes detected
+- **Platform optimization**: 
+  - PRs: `linux/amd64` only (faster feedback)
+  - Main branch: `linux/amd64,linux/arm64` (full compatibility)
 - **Docker Hub publishing**: Pushes to `calomal/weight-tracker` on main branch
-- **Image tagging**: 
-  - `latest` for main branch
-  - Branch names for feature branches
-  - PR numbers for pull requests
+- **Caching**: GitHub Actions cache for faster builds
+
+#### Branch Protection (ENFORCED)
+- **No direct pushes** to main branch allowed
+- **Required status checks**: Fast Tests, Security Scan, Build Docker Image
+- **PR requirement**: All changes must go through pull requests
+- **Admin enforcement**: Even administrators must follow these rules
 
 ### Triggering Long Tests
 Add `[test-docker]` to your commit message to run comprehensive tests including Docker builds:
