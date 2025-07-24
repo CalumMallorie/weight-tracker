@@ -151,7 +151,7 @@ def index():
                 # Redirect to maintain selected category and processing type
                 return redirect(url_for(
                     'main.index', 
-                    window=request.args.get('window', 'month'),
+                    window=request.args.get('window', 'year'),
                     category=category_id,
                     processing=processing_type
                 ))
@@ -232,7 +232,7 @@ def index():
             # Redirect to maintain selected category and processing type
             return redirect(url_for(
                 'main.index', 
-                window=request.args.get('window', 'month'),
+                window=request.args.get('window', 'year'),
                 category=category_id,
                 processing=processing_type
             ))
@@ -243,7 +243,7 @@ def index():
             logger.warning(f"Invalid form data: {error_message}")
             
             # Re-render with error
-            time_window = request.args.get('window', 'month')
+            time_window = request.args.get('window', 'year')
             entries = services.get_entries_by_time_window(time_window, selected_category_id)
             plot_json = services.create_weight_plot(entries, time_window, processing_type)
             
@@ -263,7 +263,7 @@ def index():
             )
     
     # Handle GET request
-    time_window = request.args.get('window', 'month')
+    time_window = request.args.get('window', 'year')
     logger.info(f"Getting data for time window: {time_window}, category: {selected_category_id}")
     entries = services.get_entries_by_time_window(time_window, selected_category_id)
     plot_json = services.create_weight_plot(entries, time_window, processing_type)

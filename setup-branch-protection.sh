@@ -23,26 +23,14 @@ fi
 
 echo "✅ GitHub CLI is authenticated"
 
-# Create branch protection rule
+# Create branch protection rule  
 echo "📋 Creating branch protection rule..."
 
 gh api repos/$REPO/branches/$BRANCH/protection \
   --method PUT \
-  --field required_status_checks='{
-    "strict": true,
-    "contexts": [
-      "Fast Tests",
-      "Security Scan", 
-      "Build Docker Image"
-    ]
-  }' \
+  --raw-field required_status_checks='{"strict":true,"contexts":["Fast Tests","Security Scan","Build Docker Image"]}' \
   --field enforce_admins=true \
-  --field required_pull_request_reviews='{
-    "required_approving_review_count": 0,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false,
-    "require_last_push_approval": false
-  }' \
+  --raw-field required_pull_request_reviews='{"required_approving_review_count":0,"dismiss_stale_reviews":true,"require_code_owner_reviews":false,"require_last_push_approval":false}' \
   --field restrictions=null \
   --field allow_force_pushes=false \
   --field allow_deletions=false \

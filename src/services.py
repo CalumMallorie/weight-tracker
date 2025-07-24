@@ -376,22 +376,31 @@ def create_weight_plot(
     entries: List[WeightEntry], 
     time_window: str, 
     processing_type: Optional[str] = None
-) -> Optional[str]:
+) -> str:
     """Create a plotly plot of weight entries"""
     try:
         if not entries:
-            logger.info("No entries to plot - creating empty plot")
-            # Create an empty plot for when there are no entries
-            fig = px.line(title="No data available")
+            logger.info("No entries to plot - creating informative empty plot")
+            # Create a more informative empty plot
+            fig = px.line()
+            fig.add_annotation(
+                text="No data available for the selected time period<br>Try selecting a different time range or add some entries",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, xanchor='center', yanchor='middle',
+                showarrow=False,
+                font=dict(size=16, color="#7f8c8d")
+            )
             fig.update_layout(
                 plot_bgcolor='rgba(240,240,240,0.9)',
+                paper_bgcolor='white',
                 font=dict(family="Arial, sans-serif", size=14),
-                margin=dict(l=10, r=10, t=10, b=10),
+                margin=dict(l=40, r=20, t=20, b=50),
                 height=400,
                 autosize=True,
                 title=None,
-                xaxis=dict(title="Date"),
-                yaxis=dict(title="Weight")
+                xaxis=dict(title="Date", showgrid=False, showticklabels=False),
+                yaxis=dict(title="Weight", showgrid=False, showticklabels=False),
+                showlegend=False
             )
             return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             
@@ -495,6 +504,67 @@ def create_weight_plot(
             markers=True,
             labels={y_value: y_axis_label, 'date': 'Date'},
         )
+        
+        # Add enhanced trendlines using daily aggregated values (mean, max, min)
+        if len(df) > 1:
+            # Group by date and calculate daily aggregates
+            df['date_only'] = df['date'].dt.date
+            daily_stats = df.groupby('date_only')['processed_value'].agg(['mean', 'min', 'max']).reset_index()
+            daily_stats['date_only'] = pd.to_datetime(daily_stats['date_only'])
+            
+            if len(daily_stats) > 1:
+                # Create trendlines using linear regression
+                try:
+                    from scipy.stats import linregress
+                    
+                    # Convert dates to numeric values for regression
+                    x_numeric = (daily_stats['date_only'] - daily_stats['date_only'].min()).dt.days
+                    
+                    # Mean trendline (clear/prominent)
+                    slope_mean, intercept_mean, r_value_mean, _, _ = linregress(x_numeric, daily_stats['mean'])
+                    trend_mean = slope_mean * x_numeric + intercept_mean
+                    
+                    fig.add_scatter(
+                        x=daily_stats['date_only'],
+                        y=trend_mean,
+                        mode='lines',
+                        name='Mean Trend',
+                        line=dict(color='rgba(231, 76, 60, 0.8)', width=3, dash='dash'),
+                        hovertemplate='Mean Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
+                    )
+                    
+                    # Min trendline (faint/transparent)
+                    slope_min, intercept_min, r_value_min, _, _ = linregress(x_numeric, daily_stats['min'])
+                    trend_min = slope_min * x_numeric + intercept_min
+                    
+                    fig.add_scatter(
+                        x=daily_stats['date_only'],
+                        y=trend_min,
+                        mode='lines',
+                        name='Min Trend',
+                        line=dict(color='rgba(52, 152, 219, 0.3)', width=1, dash='dot'),
+                        hovertemplate='Min Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
+                    )
+                    
+                    # Max trendline (faint/transparent)
+                    slope_max, intercept_max, r_value_max, _, _ = linregress(x_numeric, daily_stats['max'])
+                    trend_max = slope_max * x_numeric + intercept_max
+                    
+                    fig.add_scatter(
+                        x=daily_stats['date_only'],
+                        y=trend_max,
+                        mode='lines',
+                        name='Max Trend',
+                        line=dict(color='rgba(46, 204, 113, 0.3)', width=1, dash='dot'),
+                        hovertemplate='Max Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
+                    )
+                    
+                    logger.info(f"Added trendlines: Mean(slope={slope_mean:.3f}, R²={r_value_mean**2:.3f}), Min(slope={slope_min:.3f}), Max(slope={slope_max:.3f})")
+                    
+                except ImportError:
+                    logger.warning("scipy not available, skipping trendline calculation")
+                except Exception as e:
+                    logger.warning(f"Could not calculate trendlines: {str(e)}")
         
         # Enhanced hover information - always show comprehensive data
         # Format date in hover template to be more readable
@@ -603,7 +673,28 @@ def create_weight_plot(
         logger.error(f"Error creating plot: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        return None
+        # Return a fallback empty plot instead of None
+        fig = px.line()
+        fig.add_annotation(
+            text=f"Error creating plot: {str(e)}",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, xanchor='center', yanchor='middle',
+            showarrow=False,
+            font=dict(size=14, color="#e74c3c")
+        )
+        fig.update_layout(
+            plot_bgcolor='rgba(240,240,240,0.9)',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=14),
+            margin=dict(l=40, r=20, t=20, b=50),
+            height=400,
+            autosize=True,
+            title=None,
+            xaxis=dict(title="Date", showgrid=False, showticklabels=False),
+            yaxis=dict(title="Weight", showgrid=False, showticklabels=False),
+            showlegend=False
+        )
+        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 def get_available_processing_types() -> List[Dict[str, str]]:
     """Get available processing options for weight entries"""
