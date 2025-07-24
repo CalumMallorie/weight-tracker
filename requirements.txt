@@ -5,4 +5,9 @@ plotly==5.21.0
 pandas==2.2.1
 pytest==7.4.0
 docker==7.1.0
-requests==2.32.3 
+requests==2.32.3
+scipy==1.11.4
+
+# Development and security dependencies
+safety==3.0.1
+bandit[toml]==1.7.5 
