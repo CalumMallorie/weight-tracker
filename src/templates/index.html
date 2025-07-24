@@ -6,7 +6,7 @@
     <title>Weight Tracker</title>
     
     <!-- PWA metadata -->
-    <meta name="theme-color" content="#3498db">
+    <meta name="theme-color" content="#1f77b4">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Weight Tracker">
@@ -64,7 +64,7 @@
             resize: vertical;
         }
         button {
-            background-color: #3498db;
+            background-color: #1f77b4;
             color: white;
             padding: 10px 15px;
             border: none;
@@ -74,7 +74,7 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #1a6ba3;
         }
         .btn-danger {
             background-color: #e74c3c;
@@ -133,7 +133,7 @@
             color: #2c3e50;
         }
         .nav-links a {
-            color: #3498db;
+            color: #1f77b4;
             text-decoration: none;
             font-weight: 600;
         }
@@ -210,7 +210,7 @@
         }
         
         .time-filter.active {
-            background-color: #3498db;
+            background-color: #1f77b4;
             color: white;
         }
         
@@ -233,7 +233,7 @@
         }
         
         .save-button {
-            background-color: #3498db;
+            background-color: #1f77b4;
             color: white;
             border: none;
             padding: 10px 15px;
@@ -244,7 +244,7 @@
         }
         
         .save-button:hover {
-            background-color: #2980b9;
+            background-color: #1a6ba3;
         }
         
         /* Button styles */
@@ -258,7 +258,7 @@
         }
         
         .btn-primary {
-            background-color: #3498db;
+            background-color: #1f77b4;
             color: white !important;
             border: none;
             padding: 8px 16px;
@@ -269,7 +269,7 @@
         }
         
         .btn-primary:hover {
-            background-color: #2980b9;
+            background-color: #1a6ba3;
         }
         
         .btn-secondary {
@@ -443,13 +443,27 @@
         
         /* Dark mode styles */
         .dark-mode-toggle {
-            min-width: 40px;
-            padding: 8px !important;
-            margin-right: 10px;
+            min-width: 32px;
+            width: 32px;
+            height: 32px;
+            padding: 6px !important;
+            margin-right: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #1f77b4;
+            transition: all 0.3s ease;
+        }
+        
+        .dark-mode-toggle:hover {
+            background-color: #1a6ba3;
+            transform: scale(1.1);
         }
         
         .dark-mode-icon {
-            font-size: 16px;
+            font-size: 14px;
+            line-height: 1;
         }
         
         [data-theme="dark"] {
@@ -492,7 +506,7 @@
         [data-theme="dark"] input[type="number"]:focus, 
         [data-theme="dark"] textarea:focus, 
         [data-theme="dark"] select:focus {
-            border-color: #3498db;
+            border-color: #1f77b4;
             outline: none;
         }
         
@@ -515,7 +529,7 @@
         }
         
         [data-theme="dark"] .time-filter.active {
-            background-color: #3498db;
+            background-color: #1f77b4;
             color: white;
         }
         
