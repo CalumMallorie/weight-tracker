@@ -380,7 +380,11 @@ def api_create_entry():
             return jsonify({'error': 'Missing required fields (unit or category_id)'}), 400
         
         # Get the category to check if it's a body weight exercise
-        category_id = int(data['category_id'])
+        try:
+            category_id = int(data['category_id'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Category ID must be a valid integer'}), 400
+            
         category = next((c for c in services.get_all_categories() if c.id == category_id), None)
         
         is_body_weight_exercise = False
@@ -398,23 +402,38 @@ def api_create_entry():
         elif 'weight' not in data:
             return jsonify({'error': 'Weight is required for non-body weight exercises'}), 400
         else:
-            weight = float(data.get('weight', 0))
+            try:
+                weight = float(data.get('weight', 0))
+                # Validate reasonable weight ranges and no infinite/NaN values
+                import math
+                if not math.isfinite(weight) or weight < 0 or weight > 1000:
+                    return jsonify({'error': 'Weight must be a finite, positive number less than 1000'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Weight must be a valid number'}), 400
         
         # For non-body weight and non-body mass exercises, validate weight > 0
         if not is_body_weight_exercise and not is_body_mass and weight <= 0:
             return jsonify({'error': 'Weight must be greater than zero for regular exercises'}), 400
         
+        # Validate unit is a string
         unit = data['unit']
+        if not isinstance(unit, str):
+            return jsonify({'error': 'Unit must be a string'}), 400
         
         # Reps handling
         # Body mass entries don't need reps, all others do
         if is_body_mass:
             reps = None  # Body mass entries don't have reps
-        elif 'reps' not in data or data['reps'] is None or data['reps'] <= 0:
+        elif 'reps' not in data or data['reps'] is None:
             # All exercise types except body mass require reps
-            return jsonify({'error': 'Reps are required and must be greater than 0 for exercises'}), 400
+            return jsonify({'error': 'Reps are required for exercises'}), 400
         else:
-            reps = int(data['reps'])
+            try:
+                reps = int(data['reps'])
+                if reps <= 0 or reps > 10000:  # Reasonable upper limit
+                    return jsonify({'error': 'Reps must be between 1 and 10000'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Reps must be a valid integer'}), 400
         
         # Create the entry
         entry = services.save_weight_entry(weight, unit, category_id, reps)
@@ -542,6 +561,29 @@ def api_create_category():
     data = request.json
     name = data.get('name', '').strip()
     is_body_weight_exercise = data.get('is_body_weight_exercise', False)
+    
+    # Validate name length and content
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+    if len(name) > 100:  # Reasonable limit for category names
+        return jsonify({'error': 'Category name must be 100 characters or less'}), 400
+    
+    # Sanitize input to prevent XSS
+    import re
+    # Remove potentially dangerous HTML/JavaScript patterns
+    dangerous_patterns = [
+        r'<script[^>]*>.*?</script>',
+        r'<iframe[^>]*>.*?</iframe>',
+        r'javascript:',
+        r'on\w+\s*=',
+        r'<[^>]*>',
+    ]
+    
+    sanitized_name = name
+    for pattern in dangerous_patterns:
+        sanitized_name = re.sub(pattern, '', sanitized_name, flags=re.IGNORECASE | re.DOTALL)
+    
+    name = sanitized_name.strip()
     
     if name:
         try:
