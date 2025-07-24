@@ -251,20 +251,29 @@ class TestDockerCompose:
     @pytest.mark.slow
     def test_docker_compose_config(self):
         """Test that docker-compose.yml is valid."""
-        result = subprocess.run(
-            ['docker-compose', 'config'],
-            capture_output=True,
-            text=True,
-            cwd='.'
-        )
+        # Try both docker-compose and docker compose commands
+        for cmd in [['docker-compose', 'config'], ['docker', 'compose', 'config']]:
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    cwd='.',
+                    timeout=30
+                )
+                
+                if result.returncode == 0:
+                    # Should not have any errors
+                    assert result.returncode == 0
+                    assert 'services:' in result.stdout
+                    assert 'weight-tracker:' in result.stdout
+                    return
+                    
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                continue
         
-        if result.returncode != 0:
-            pytest.skip("docker-compose not available")
-        
-        # Should not have any errors
-        assert result.returncode == 0
-        assert 'services:' in result.stdout
-        assert 'weight-tracker:' in result.stdout
+        # If neither command worked, skip the test
+        pytest.skip("Neither docker-compose nor docker compose commands are available")
 
 
 def pytest_configure(config):
