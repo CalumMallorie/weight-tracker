@@ -104,10 +104,11 @@ The application tracks weight entries across different categories:
 ## Git Workflow and CI Pipeline
 
 ### Commit Practices
-- **Commit frequently**: Make regular commits as you complete features or fix bugs
 - **Use descriptive commit messages**: Follow the existing style (see recent commits with `git log --oneline -10`)
-- **Run tests before committing**: Always run `python tools/test_runner.py` before committing
+- **Run tests before pushing**: Always run `python tools/test_runner.py` before pushing (handled by pre-push hook)
 - **Check git status**: Use `git status` and `git diff` to review changes before committing
+
+*Note: Commit frequency is defined in the PROACTIVE WORKFLOW section above*
 
 ### CI Pipeline Awareness
 The repository has an optimized GitHub Actions pipeline that ensures quality and security:
