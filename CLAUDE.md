@@ -255,4 +255,4 @@ git push
 ### **Manual Control Points**
 - **Human approval**: All PRs require manual review and web merge
 - **Security validation**: Human verifies changes before production
-- **No CLI bypass**: API/command-line merges are completely blocked1
+- **No CLI bypass**: API/command-line merges are completely blocked
