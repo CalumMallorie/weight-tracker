@@ -181,14 +181,28 @@ git push -u origin feature/auto-generated-name
 gh pr create --title "Feature: Auto Generated Title" --body "Description of changes"
 ```
 
-### **Bug Fix Pattern**
+### **Bug Fix Pattern** (PROACTIVE)
 ```bash
-git checkout -b fix/issue-description
-# Fix the issue
+# 1. Understand the bug/issue first
+# 2. AUTOMATICALLY create fix branch based on issue
+git checkout -b fix/auto-generated-name
+
+# 3. Work incrementally with regular commits
+git add .
+git commit -m "step: identify root cause of issue"
+
+# 4. Continue fixing with commits
+git add .
+git commit -m "fix: resolve issue description"
+
+# 5. Final testing and completion
 python -m pytest tests/ -v  # Verify fix doesn't break anything
-git add . && git commit -m "fix: resolve issue description"
-git push -u origin fix/issue-description
-gh pr create --title "Fix: Issue Description" --body "Details of fix"
+
+# 6. Push feature branch (pre-push hook runs tests automatically)
+git push -u origin fix/auto-generated-name
+
+# 7. Create PR - DO NOT MERGE
+gh pr create --title "Fix: Auto Generated Title" --body "Details of fix"
 ```
 
 ### **Repository Cleanup**
