@@ -102,6 +102,30 @@ Problem: Branch cleanup is maintenance work, should be done from main
 - After fixing bugs or errors
 - Before running tests
 
+### **MANDATORY FEATURE COMPLETION TAGGING**
+**CRITICAL REQUIREMENT:** When completing ANY feature (new functionality, enhancements, fixes), you MUST:
+
+1. **Create annotated git tag** for every completed feature: `git tag -a v1.x.x -m "Feature description"`
+2. **Use semantic versioning**: 
+   - Major features: `v1.x.0` 
+   - Minor features/enhancements: `v1.x.y`
+   - Bug fixes: `v1.x.y` (patch increment)
+3. **Push tags to remote**: `git push origin --tags`
+4. **Tag naming format**: Use descriptive tags like `v1.2.0-multi-user-support` or `v1.1.5-plot-fix`
+
+**Examples:**
+```bash
+# After completing a feature
+git tag -a v1.2.0-multi-user-support -m "Add multi-user authentication and data isolation"
+git push origin --tags
+
+# After a bug fix
+git tag -a v1.1.5-plot-rendering-fix -m "Fix plot rendering issue in dark mode"
+git push origin --tags
+```
+
+**NEVER complete feature work without proper version tagging. This is required for release tracking.**
+
 **NEVER work on main branch. ALWAYS create feature branch for any code changes.**
 
 ## Development Commands
