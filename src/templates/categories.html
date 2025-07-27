@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,14 +24,14 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         h1, h2 {
-            color: #2c3e50;
+            color: #ffffff;
         }
         .container {
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 25px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -44,18 +44,20 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #34495e;
+            color: #b0b0b0;
         }
         input[type="text"] {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
             box-sizing: border-box;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
         button {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
             padding: 10px 15px;
             border: none;
@@ -65,7 +67,7 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #5f3dc4;
         }
         .btn-danger {
             background-color: #e74c3c;
@@ -78,13 +80,13 @@
             padding: 10px;
             margin-bottom: 15px;
             border-left: 4px solid #e74c3c;
-            background-color: #fadbd8;
+            background-color: #3a3a3a;
         }
         .category-list {
             margin-top: 20px;
         }
         .category-item {
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
             padding: 12px 15px;
             margin-bottom: 8px;
             border-radius: 4px;
@@ -97,7 +99,7 @@
             font-size: 16px;
         }
         .category-badge {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
             font-size: 12px;
             padding: 3px 6px;
@@ -109,7 +111,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -122,7 +124,7 @@
         }
         
         .nav-links a {
-            color: #1f77b4;
+            color: #6c5ce7;
             text-decoration: none;
             font-weight: 600;
         }
@@ -148,31 +150,6 @@
             }
         }
         
-        /* Dark mode styles */
-        .dark-mode-toggle {
-            min-width: 32px;
-            width: 32px;
-            height: 32px;
-            padding: 6px !important;
-            margin: 0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #1f77b4;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .dark-mode-toggle:hover {
-            background-color: #1a6ba3;
-            transform: scale(1.1);
-        }
-        
-        .dark-mode-icon {
-            font-size: 14px;
-            line-height: 1;
-        }
         
         [data-theme="dark"] {
             background-color: #1a1a1a;
@@ -212,7 +189,7 @@
         }
         
         [data-theme="dark"] input[type="text"]:focus {
-            border-color: #1f77b4;
+            border-color: #6c5ce7;
             outline: none;
         }
         
@@ -263,9 +240,6 @@
     <div class="nav-links">
         <div class="title-section">
             <a href="{{ url_for('main.index') }}" data-url="index">← Back to Weight Tracker</a>
-            <button id="dark-mode-toggle" class="btn btn-secondary dark-mode-toggle" title="Toggle Dark Mode">
-                <span class="dark-mode-icon">🌙</span>
-            </button>
         </div>
         <a href="{{ url_for('main.get_entries') }}" data-url="entries">View All Entries</a>
     </div>
@@ -325,9 +299,9 @@
                     {% if category.is_body_mass %}
                     <span class="category-badge">Body Mass</span>
                     {% elif category.is_body_weight_exercise %}
-                    <span class="category-badge" style="background-color: #2ecc71;">Body Weight</span>
+                    <span class="category-badge" style="background-color: #6c5ce7;">Body Weight</span>
                     {% else %}
-                    <span class="category-badge" style="background-color: #9b59b6;">Normal</span>
+                    <span class="category-badge" style="background-color: #a29bfe;">Normal</span>
                     {% endif %}
                 </div>
                 {% if not category.is_body_mass %}
@@ -377,44 +351,10 @@
             }
         }
         
-        // Dark mode functionality
-        function initializeDarkMode() {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            // Load saved theme preference
-            const savedTheme = localStorage.getItem('weightTracker_theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Add click event listener
-            darkModeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                
-                // Save preference
-                localStorage.setItem('weightTracker_theme', newTheme);
-            });
-        }
-        
-        function setTheme(theme) {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            document.documentElement.setAttribute('data-theme', theme);
-            
-            // Update toggle icon
-            if (theme === 'dark') {
-                darkModeIcon.textContent = '☀️';
-                darkModeToggle.title = 'Switch to Light Mode';
-            } else {
-                darkModeIcon.textContent = '🌙';
-                darkModeToggle.title = 'Switch to Dark Mode';
-            }
-        }
-        
-        // Initialize dark mode on page load
-        document.addEventListener('DOMContentLoaded', initializeDarkMode);
+        // Set permanent dark theme
+        document.addEventListener('DOMContentLoaded', function() {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        });
     </script>
 </body>
 </html>

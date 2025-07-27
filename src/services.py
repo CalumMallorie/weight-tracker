@@ -399,8 +399,8 @@ def create_weight_plot(
                 font=dict(size=16, color="#7f8c8d")
             )
             fig.update_layout(
-                plot_bgcolor='rgba(240,240,240,0.9)',
-                paper_bgcolor='white',
+                plot_bgcolor='#2d2d2d',
+                paper_bgcolor='#2d2d2d',
                 font=dict(family="Arial, sans-serif", size=14),
                 margin=dict(l=40, r=20, t=20, b=50),
                 height=400,
@@ -695,8 +695,8 @@ def create_weight_plot(
             font=dict(size=14, color="#e74c3c")
         )
         fig.update_layout(
-            plot_bgcolor='rgba(240,240,240,0.9)',
-            paper_bgcolor='white',
+            plot_bgcolor='#2d2d2d',
+            paper_bgcolor='#2d2d2d',
             font=dict(family="Arial, sans-serif", size=14),
             margin=dict(l=40, r=20, t=20, b=50),
             height=400,

@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### **REQUIRED WORKFLOW - ALWAYS FOLLOW**
 1. **Create feature branches** for ALL changes: `git checkout -b feature/descriptive-name`
+2. Regularly commit your work to the branch.
 2. **Run tests locally** before pushing: `python -m pytest tests/ -v`
 3. **Push feature branch**: `git push -u origin feature/branch-name`
 4. **Create PR only**: `gh pr create --title "Title" --body "Description"`
@@ -221,4 +222,4 @@ git push
 ### **Manual Control Points**
 - **Human approval**: All PRs require manual review and web merge
 - **Security validation**: Human verifies changes before production
-- **No CLI bypass**: API/command-line merges are completely blocked
+- **No CLI bypass**: API/command-line merges are completely blocked1

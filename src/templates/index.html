@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weight Tracker</title>
     
     <!-- PWA metadata -->
-    <meta name="theme-color" content="#1f77b4">
+    <meta name="theme-color" content="#6c5ce7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Weight Tracker">
@@ -36,7 +36,7 @@
             color: #2c3e50;
         }
         .container {
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 25px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -64,7 +64,7 @@
             resize: vertical;
         }
         button {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
             padding: 10px 15px;
             border: none;
@@ -74,7 +74,7 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #1a6ba3;
+            background-color: #5f3dc4;
         }
         .btn-danger {
             background-color: #e74c3c;
@@ -123,7 +123,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -139,7 +139,7 @@
             color: #2c3e50;
         }
         .nav-links a {
-            color: #1f77b4;
+            color: #6c5ce7;
             text-decoration: none;
             font-weight: 600;
         }
@@ -161,7 +161,7 @@
         }
         .body-weight-badge {
             display: inline-block;
-            background-color: #2ecc71;
+            background-color: #6c5ce7;
             color: white;
             font-size: 12px;
             padding: 3px 6px;
@@ -171,7 +171,7 @@
         
         /* Plot settings styles */
         .plot-settings {
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -216,7 +216,7 @@
         }
         
         .time-filter.active {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
         }
         
@@ -239,7 +239,7 @@
         }
         
         .save-button {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
             border: none;
             padding: 10px 15px;
@@ -250,7 +250,7 @@
         }
         
         .save-button:hover {
-            background-color: #1a6ba3;
+            background-color: #5f3dc4;
         }
         
         /* Button styles */
@@ -264,7 +264,7 @@
         }
         
         .btn-primary {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white !important;
             border: none;
             padding: 8px 16px;
@@ -275,11 +275,11 @@
         }
         
         .btn-primary:hover {
-            background-color: #1a6ba3;
+            background-color: #5f3dc4;
         }
         
         .btn-secondary {
-            background-color: #2ecc71;
+            background-color: #6c5ce7;
             color: white !important;
             border: none;
             padding: 8px 16px;
@@ -290,7 +290,7 @@
         }
         
         .btn-secondary:hover {
-            background-color: #27ae60;
+            background-color: #5f3dc4;
         }
         
         /* Modal styles */
@@ -308,7 +308,7 @@
         }
         
         .modal-content {
-            background-color: white;
+            background-color: #2d2d2d;
             padding: 20px;
             border-radius: 8px;
             max-width: 400px;
@@ -326,7 +326,7 @@
         .modal-title {
             margin: 0;
             font-size: 20px;
-            color: #2c3e50;
+            color: #ffffff;
         }
         
         .close-button {
@@ -441,7 +441,7 @@
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
             border-left: 1px solid #ddd;
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
         }
 
         .number-input {
@@ -453,31 +453,6 @@
             box-sizing: border-box;
         }
         
-        /* Dark mode styles */
-        .dark-mode-toggle {
-            min-width: 32px;
-            width: 32px;
-            height: 32px;
-            padding: 6px !important;
-            margin: 0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #1f77b4;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .dark-mode-toggle:hover {
-            background-color: #1a6ba3;
-            transform: scale(1.1);
-        }
-        
-        .dark-mode-icon {
-            font-size: 14px;
-            line-height: 1;
-        }
         
         [data-theme="dark"] {
             background-color: #1a1a1a;
@@ -542,7 +517,7 @@
         }
         
         [data-theme="dark"] .time-filter.active {
-            background-color: #1f77b4;
+            background-color: #6c5ce7;
             color: white;
         }
         
@@ -578,9 +553,6 @@
     <div class="nav-links">
         <div class="title-section">
             <h1>Weight Tracker</h1>
-            <button id="dark-mode-toggle" class="btn btn-secondary dark-mode-toggle" title="Toggle Dark Mode">
-                <span class="dark-mode-icon">🌙</span>
-            </button>
         </div>
         <div class="action-buttons">
             <button id="track-body-weight-btn" class="btn btn-secondary">Track Body Weight</button>
@@ -604,9 +576,9 @@
             </div>
             
             {% if last_body_mass_entry %}
-            <div style="margin-bottom: 15px; text-align: center; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="margin-bottom: 15px; text-align: center; padding: 8px; background-color: #3a3a3a; border-radius: 4px;">
                 <div style="font-size: 12px; color: #7f8c8d;">Last recorded weight</div>
-                <div style="font-size: 18px; font-weight: 600; color: #2c3e50;">
+                <div style="font-size: 18px; font-weight: 600; color: #ffffff;">
                     {{ last_body_mass_entry.weight }} {{ last_body_mass_entry.unit }}
                 </div>
                 <div style="font-size: 12px; color: #7f8c8d;">
@@ -962,63 +934,25 @@
                 saveSelectedExercise(categorySelect.value, processingType);
             }
             
-            // Dark mode functionality
-            initializeDarkMode();
+            // Set permanent dark theme
+            document.documentElement.setAttribute('data-theme', 'dark');
+            updatePlotTheme();
         });
         
-        // Dark mode functions
-        function initializeDarkMode() {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            // Load saved theme preference
-            const savedTheme = localStorage.getItem('weightTracker_theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Add click event listener
-            darkModeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                
-                // Save preference
-                localStorage.setItem('weightTracker_theme', newTheme);
-            });
-        }
-        
-        function setTheme(theme) {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            document.documentElement.setAttribute('data-theme', theme);
-            
-            // Update toggle icon
-            if (theme === 'dark') {
-                darkModeIcon.textContent = '☀️';
-                darkModeToggle.title = 'Switch to Light Mode';
-            } else {
-                darkModeIcon.textContent = '🌙';
-                darkModeToggle.title = 'Switch to Dark Mode';
-            }
-            
-            // Update plot theme if plot exists
-            updatePlotTheme(theme);
-        }
-        
-        function updatePlotTheme(theme) {
+        // Update plot theme for dark mode
+        function updatePlotTheme() {
             const plotElement = document.getElementById('weight-plot');
             if (plotElement && window.Plotly && plotElement.data) {
-                const isDark = theme === 'dark';
                 const update = {
-                    plot_bgcolor: isDark ? '#2d2d2d' : 'rgba(240,240,240,0.9)',
-                    paper_bgcolor: isDark ? '#2d2d2d' : 'white',
-                    font: { color: isDark ? '#e0e0e0' : '#333' },
-                    'xaxis.gridcolor': isDark ? 'rgba(255,255,255,0.1)' : 'rgba(200,200,200,0.3)',
-                    'yaxis.gridcolor': isDark ? 'rgba(255,255,255,0.1)' : 'rgba(200,200,200,0.3)',
-                    'xaxis.tickfont.color': isDark ? '#e0e0e0' : '#333',
-                    'yaxis.tickfont.color': isDark ? '#e0e0e0' : '#333',
-                    'xaxis.title.font.color': isDark ? '#e0e0e0' : '#333',
-                    'yaxis.title.font.color': isDark ? '#e0e0e0' : '#333'
+                    plot_bgcolor: '#2d2d2d',
+                    paper_bgcolor: '#2d2d2d',
+                    font: { color: '#e0e0e0' },
+                    'xaxis.gridcolor': 'rgba(255,255,255,0.1)',
+                    'yaxis.gridcolor': 'rgba(255,255,255,0.1)',
+                    'xaxis.tickfont.color': '#e0e0e0',
+                    'yaxis.tickfont.color': '#e0e0e0',
+                    'xaxis.title.font.color': '#e0e0e0',
+                    'yaxis.title.font.color': '#e0e0e0'
                 };
                 
                 window.Plotly.relayout(plotElement, update);
