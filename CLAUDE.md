@@ -25,6 +25,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **YOUR JOB ENDS AT PR CREATION. NEVER MERGE. HUMAN MAINTAINS FINAL CONTROL.**
 
+## 🚀 PROACTIVE WORKFLOW - START EVERY CODING TASK
+
+### **AUTOMATIC BRANCH VALIDATION AND CREATION**
+1. **Check current branch first** - Always run `git branch --show-current` to validate branch name matches task scope
+2. **Branch scope validation** - Assess if current branch name aligns with the work being requested
+3. **Create correct branch if needed** - If branch doesn't match scope, create appropriate branch from main
+4. **Understand scope** - Read the request, analyze codebase if needed
+5. **Auto-create feature branch** immediately after scope analysis: `git checkout -b feature/auto-generated-name`
+6. **Commit regularly** after each logical step/function/file completion
+7. **Track with TodoWrite** - Use task completion as commit triggers
+8. **Protected main awareness** - All work happens on feature branches due to CI protection
+9. **Follow standard completion** - End with tests → push → PR workflow
+
+### **BRANCH VALIDATION EXAMPLES**
+<details>
+<summary>Examples of correct vs incorrect branch usage</summary>
+
+**❌ WRONG BRANCH USAGE:**
+```
+Current branch: feature/dark-mode-improvements
+User request: "Update the CLAUDE.md documentation"
+Problem: Branch is for dark mode, but task is documentation
+Action: git checkout main → git checkout -b docs/update-claude-instructions
+```
+
+**❌ WRONG BRANCH USAGE:**
+```
+Current branch: feature/add-user-auth
+User request: "Fix the plot rendering bug"
+Problem: Branch is for auth features, but task is a plot bug fix
+Action: git checkout main → git checkout -b fix/plot-rendering-issue
+```
+
+**✅ CORRECT BRANCH USAGE:**
+```
+Current branch: feature/user-authentication
+User request: "Add login validation to the auth system"
+Result: Branch matches scope, continue on current branch
+```
+
+**✅ CORRECT BRANCH CREATION:**
+```
+Current branch: main
+User request: "Implement dark mode for all templates"
+Action: git checkout -b feature/implement-dark-mode
+```
+
+</details>
+
+### **Branch Naming Convention**
+- Auto-generate descriptive names based on request scope
+- Use prefixes: `feature/`, `fix/`, `refactor/`, `docs/`
+- Examples: `feature/add-dark-mode`, `fix/plot-rendering-bug`, `docs/update-claude-md`
+
+### **Commit Triggers**
+- After completing each function or class
+- After significant file modifications
+- After completing TodoWrite tasks
+- After fixing bugs or errors
+- Before running tests
+
+**NEVER work on main branch. ALWAYS create feature branch for any code changes.**
+
 ## Development Commands
 
 ### Testing
