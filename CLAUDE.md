@@ -30,13 +30,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### **AUTOMATIC BRANCH VALIDATION AND CREATION**
 1. **Check current branch first** - Always run `git branch --show-current` to validate branch name matches task scope
 2. **Branch scope validation** - Assess if current branch name aligns with the work being requested
-3. **Create correct branch if needed** - If branch doesn't match scope, create appropriate branch from main
-4. **Understand scope** - Read the request, analyze codebase if needed
-5. **Auto-create feature branch** immediately after scope analysis: `git checkout -b feature/auto-generated-name`
-6. **Commit regularly** after each logical step/function/file completion
-7. **Track with TodoWrite** - Use task completion as commit triggers
-8. **Protected main awareness** - All work happens on feature branches due to CI protection
-9. **Follow standard completion** - End with tests → push → PR workflow
+3. **Maintenance task check** - Repository maintenance (branch cleanup, etc.) should be done from main branch
+4. **Create correct branch if needed** - If branch doesn't match scope AND it's code work, create appropriate branch from main
+5. **Understand scope** - Read the request, analyze codebase if needed
+6. **Auto-create feature branch** immediately after scope analysis (for code changes only): `git checkout -b feature/auto-generated-name`
+7. **Commit regularly** after each logical step/function/file completion
+8. **Track with TodoWrite** - Use task completion as commit triggers
+9. **Protected main awareness** - All work happens on feature branches due to CI protection (except maintenance)
+10. **Follow standard completion** - End with tests → push → PR workflow
 
 ### **BRANCH VALIDATION EXAMPLES**
 <details>
@@ -70,6 +71,21 @@ Result: Branch matches scope, continue on current branch
 Current branch: main
 User request: "Implement dark mode for all templates"
 Action: git checkout -b feature/implement-dark-mode
+```
+
+**✅ CORRECT MAINTENANCE ON MAIN:**
+```
+Current branch: main
+User request: "Clean up all branches other than main"
+Result: Repository maintenance - stay on main branch, no new branch needed
+```
+
+**❌ WRONG: CREATING BRANCH FOR MAINTENANCE:**
+```
+Current branch: main
+User request: "Delete old branches"
+Wrong action: git checkout -b refactor/cleanup-branches
+Problem: Branch cleanup is maintenance work, should be done from main
 ```
 
 </details>
