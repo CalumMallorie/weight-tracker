@@ -10,14 +10,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. **NEVER bypass branch protection** or workflow safeguards
 4. **NEVER commit directly to main branch**
 
-### **REQUIRED WORKFLOW - ALWAYS FOLLOW**
-1. **Create feature branches** for ALL changes: `git checkout -b feature/descriptive-name`
-2. Regularly commit your work to the branch.
-2. **Run tests locally** before pushing: `python -m pytest tests/ -v`
-3. **Push feature branch**: `git push -u origin feature/branch-name`
-4. **Create PR only**: `gh pr create --title "Title" --body "Description"`
-5. **STOP HERE** - Let human review and merge via GitHub web interface
-
 ### **SUCCESS METRICS**
 - **95 tests passing, 7 skipped** (expected result)
 - **All CI checks green** before PR creation
