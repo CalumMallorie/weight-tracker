@@ -26,6 +26,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **YOUR JOB ENDS AT PR CREATION. NEVER MERGE. HUMAN MAINTAINS FINAL CONTROL.**
 
+## 🚀 PROACTIVE WORKFLOW - START EVERY CODING TASK
+
+### **AUTOMATIC BRANCH CREATION AND REGULAR COMMITS**
+1. **Understand scope first** - Read the request, analyze codebase if needed
+2. **Auto-create feature branch** immediately after scope analysis: `git checkout -b feature/auto-generated-name`
+3. **Commit regularly** after each logical step/function/file completion
+4. **Track with TodoWrite** - Use task completion as commit triggers
+5. **Protected main awareness** - All work happens on feature branches due to CI protection
+6. **Follow standard completion** - End with tests → push → PR workflow
+
+### **Branch Naming Convention**
+- Auto-generate descriptive names based on request scope
+- Use prefixes: `feature/`, `fix/`, `refactor/`, `docs/`
+- Examples: `feature/add-dark-mode`, `fix/plot-rendering-bug`, `refactor/service-layer`
+
+### **Commit Triggers**
+- After completing each function or class
+- After significant file modifications
+- After completing TodoWrite tasks
+- After fixing bugs or errors
+- Before running tests
+
+**NEVER work on main branch. ALWAYS create feature branch for any code changes.**
+
 ## Development Commands
 
 ### Testing
@@ -140,27 +164,29 @@ git commit -m "Add new feature [test-docker]"
 
 ## 🔧 SAFE WORKFLOW PATTERNS
 
-### **Standard Feature Development**
+### **Standard Feature Development** (PROACTIVE)
 ```bash
-# ALWAYS start with feature branch
-git checkout -b feature/your-feature-name
+# 1. Understand scope of user request first
+# 2. AUTOMATICALLY create feature branch based on request
+git checkout -b feature/auto-generated-name
 
-# Make changes, then test
+# 3. Work incrementally with regular commits
+# After each logical step:
+git add .
+git commit -m "step: implement specific functionality"
+
+# 4. Continue committing throughout development
+git add .
+git commit -m "feat: add main feature implementation"
+
+# 5. Final testing and completion
 python -m pytest tests/ -v  # Must show: 95 passed, 7 skipped
 
-# Stage and commit with proper format
-git add .
-git commit -m "feat: descriptive message
+# 6. Push feature branch (pre-push hook runs tests automatically)
+git push -u origin feature/auto-generated-name
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-# Push feature branch (pre-push hook runs tests automatically)
-git push -u origin feature/your-feature-name
-
-# Create PR - DO NOT MERGE
-gh pr create --title "Feature: Your Feature" --body "Description of changes"
+# 7. Create PR - DO NOT MERGE
+gh pr create --title "Feature: Auto Generated Title" --body "Description of changes"
 ```
 
 ### **Bug Fix Pattern**
