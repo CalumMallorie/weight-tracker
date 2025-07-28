@@ -1,6 +1,7 @@
-from flask import Blueprint, request, render_template, redirect, url_for, jsonify, current_app
+from flask import Blueprint, request, render_template, redirect, url_for, jsonify, current_app, flash
 import logging
 from . import services
+from .auth import login_required, get_user_id, is_authenticated
 from typing import Dict, Any, List, Optional
 from .models import WeightEntry
 import os
@@ -15,19 +16,23 @@ main = Blueprint('main', __name__)
 api = Blueprint('api', __name__, url_prefix='/api')
 
 @main.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     """Main page for entering weight and viewing charts"""
     logger.info(f"Access to index page with method: {request.method}")
     
-    # Get all categories
-    categories = services.get_all_categories()
+    # Get current user
+    user_id = get_user_id()
+    
+    # Get all categories for this user
+    categories = services.get_all_categories(user_id)
     
     # Get body mass category for the modal
     body_mass_category = next((c for c in categories if c.is_body_mass), None)
     body_mass_category_id = body_mass_category.id if body_mass_category else None
     
     # Get last body mass entry for the modal
-    last_body_mass_entry = services.get_most_recent_body_mass()
+    last_body_mass_entry = services.get_most_recent_body_mass(user_id)
     
     # Default to first category (Body Mass) if available
     selected_category_id = int(request.args.get('category', '0')) if request.args.get('category') else None
@@ -136,17 +141,17 @@ def index():
                 if test_notes_case:
                     # When category_id_or_notes is a string, it's treated as notes
                     test_weight = float(weight_str) if weight_str else 0
-                    services.save_weight_entry(test_weight, unit, notes)
+                    services.save_weight_entry(test_weight, unit, notes, user_id=user_id)
                 elif body_mass_test:
                     # For body mass test without reps - validate weight first
                     test_weight = float(weight_str) if weight_str else 0
                     if test_weight <= 0:
                         raise ValueError("Body weight must be greater than zero")
-                    services.save_weight_entry(test_weight, unit, category_id, None)
+                    services.save_weight_entry(test_weight, unit, category_id, None, user_id=user_id)
                 else:
                     # For body weight exercise tests
                     reps = int(reps_str) if reps_str else 10  # Default reps for test
-                    services.save_weight_entry(0, unit, category_id, reps)
+                    services.save_weight_entry(0, unit, category_id, reps, user_id=user_id)
                     
                 # Redirect to maintain selected category and processing type
                 return redirect(url_for(
@@ -225,7 +230,7 @@ def index():
                         raise ValueError("Reps are required for exercises")
 
             # Normal operation with all parameters
-            services.save_weight_entry(weight, unit, category_id, reps)
+            services.save_weight_entry(weight, unit, category_id, reps, user_id=user_id)
                 
             logger.info("Weight entry saved successfully")
             
@@ -265,7 +270,7 @@ def index():
     # Handle GET request
     time_window = request.args.get('window', 'year')
     logger.info(f"Getting data for time window: {time_window}, category: {selected_category_id}")
-    entries = services.get_entries_by_time_window(time_window, selected_category_id)
+    entries = services.get_entries_by_time_window(time_window, selected_category_id, user_id)
     plot_json = services.create_weight_plot(entries, time_window, processing_type)
     
     return render_template(
@@ -283,20 +288,24 @@ def index():
     )
 
 @main.route('/entries', methods=['GET'])
+@login_required
 def get_entries():
     """Page for viewing and managing entries"""
     logger.info("Access to entries management page")
+    
+    # Get current user
+    user_id = get_user_id()
     
     # Get category filter if provided
     category_id = request.args.get('category')
     if category_id:
         category_id = int(category_id)
     
-    # Get all categories
-    categories = services.get_all_categories()
+    # Get all categories for this user
+    categories = services.get_all_categories(user_id)
     
-    # Get entries, possibly filtered by category
-    entries = services.get_all_entries(category_id)
+    # Get entries, possibly filtered by category for this user
+    entries = services.get_all_entries(category_id, user_id)
     
     return render_template(
         'entries.html', 
@@ -306,9 +315,13 @@ def get_entries():
     )
 
 @main.route('/categories', methods=['GET', 'POST'])
+@login_required
 def manage_categories():
     """Page for managing weight categories"""
     logger.info(f"Access to categories management page with method: {request.method}")
+    
+    # Get current user
+    user_id = get_user_id()
     
     if request.method == 'POST':
         # Handle category creation
@@ -321,8 +334,8 @@ def manage_categories():
         
         if name:
             try:
-                # Create the category with the appropriate flags
-                category = services.get_or_create_category(name, is_body_mass=is_body_mass)
+                # Create the category with the appropriate flags for this user
+                category = services.get_or_create_category(name, user_id, is_body_mass=is_body_mass)
                 
                 # Set is_body_weight_exercise flag if the column exists (for backward compatibility)
                 if hasattr(category, 'is_body_weight_exercise'):
@@ -334,33 +347,41 @@ def manage_categories():
                 logger.error(f"Failed to create category: {str(e)}")
                 return render_template(
                     'categories.html', 
-                    categories=services.get_all_categories(),
+                    categories=services.get_all_categories(user_id),
                     error=f"Failed to create category: {str(e)}"
                 )
                 
         return redirect(url_for('main.manage_categories'))
     
-    # GET request - show categories
-    categories = services.get_all_categories()
+    # GET request - show categories for this user
+    categories = services.get_all_categories(user_id)
     return render_template('categories.html', categories=categories)
 
 @api.route('/entries', methods=['GET'])
+@login_required
 def api_entries():
     """API endpoint to get all entries as JSON"""
     logger.info("API request for all entries")
+    
+    # Get current user
+    user_id = get_user_id()
     
     # Get category filter if provided
     category_id = request.args.get('category')
     if category_id:
         category_id = int(category_id)
     
-    entries = services.get_all_entries(category_id)
+    entries = services.get_all_entries(category_id, user_id)
     return jsonify([entry.to_dict() for entry in entries])
 
 @api.route('/entries', methods=['POST'])
+@login_required
 def api_create_entry():
     """API endpoint to create a new entry"""
     logger.info("API request to create a new entry")
+    
+    # Get current user
+    user_id = get_user_id()
     
     try:
         # Check for proper content type
@@ -385,9 +406,9 @@ def api_create_entry():
         except (ValueError, TypeError):
             return jsonify({'error': 'Category ID must be a valid integer'}), 400
             
-        # Get category safely with error handling for concurrent access
+        # Get category safely with error handling for concurrent access (for this user)
         try:
-            categories = services.get_all_categories()
+            categories = services.get_all_categories(user_id)
             category = next((c for c in categories if c.id == category_id), None)
         except Exception:
             category = None
@@ -440,8 +461,8 @@ def api_create_entry():
             except (ValueError, TypeError):
                 return jsonify({'error': 'Reps must be a valid integer'}), 400
         
-        # Create the entry
-        entry = services.save_weight_entry(weight, unit, category_id, reps)
+        # Create the entry for this user
+        entry = services.save_weight_entry(weight, unit, category_id, reps, user_id=user_id)
         logger.info(f"Entry created successfully: {entry}")
         
         return jsonify(entry.to_dict()), 201
@@ -454,10 +475,15 @@ def api_create_entry():
         return jsonify({'error': 'Failed to create entry'}), 500
 
 @api.route('/entries/<int:entry_id>', methods=['DELETE'])
+@login_required
 def api_delete_entry(entry_id):
     """API endpoint to delete an entry"""
     logger.info(f"API request to delete entry {entry_id}")
-    success = services.delete_entry(entry_id)
+    
+    # Get current user
+    user_id = get_user_id()
+    
+    success = services.delete_entry(entry_id, user_id)
     logger.info(f"Delete entry {entry_id} result: {success}")
     if success:
         return jsonify({'success': True})
@@ -465,9 +491,13 @@ def api_delete_entry(entry_id):
         return jsonify({'error': 'Entry not found'}), 404
 
 @api.route('/entries/<int:entry_id>', methods=['PUT'])
+@login_required
 def api_update_entry(entry_id):
     """API endpoint to update an entry"""
     logger.info(f"API request to update entry {entry_id}")
+    
+    # Get current user
+    user_id = get_user_id()
     
     try:
         data = request.json
@@ -478,19 +508,19 @@ def api_update_entry(entry_id):
             logger.warning("Missing required fields in update request")
             return jsonify({'error': 'Missing required fields'}), 400
             
-        # Get the current entry to have defaults for any missing fields
-        current_entry = WeightEntry.query.get(entry_id)
+        # Get the current entry to have defaults for any missing fields (ensure it belongs to user)
+        current_entry = WeightEntry.query.filter_by(id=entry_id, user_id=user_id).first()
         if not current_entry:
-            logger.warning(f"Entry not found with ID: {entry_id}")
+            logger.warning(f"Entry not found with ID: {entry_id} for user_id: {user_id}")
             return jsonify({'error': 'Entry not found'}), 404
             
         # Use current values as defaults, or values from the request
         category_id = int(data.get('category_id', current_entry.category_id))
         unit = data.get('unit', current_entry.unit)
         
-        # Get the category to check if it's a body weight exercise
+        # Get the category to check if it's a body weight exercise (for this user)
         try:
-            categories = services.get_all_categories()
+            categories = services.get_all_categories(user_id)
             category = next((c for c in categories if c.id == category_id), None)
         except Exception:
             category = None
@@ -541,7 +571,8 @@ def api_update_entry(entry_id):
             weight,
             unit,
             category_id,
-            reps
+            reps,
+            user_id=user_id
         )
         
         if updated_entry:
@@ -557,15 +588,25 @@ def api_update_entry(entry_id):
         return jsonify({'error': 'Failed to update entry'}), 500
 
 @api.route('/categories', methods=['GET'])
+@login_required
 def api_categories():
     """API endpoint to get all categories as JSON"""
     logger.info("API request for all categories")
-    categories = services.get_all_categories()
+    
+    # Get current user
+    user_id = get_user_id()
+    
+    categories = services.get_all_categories(user_id)
     return jsonify([category.to_dict() for category in categories])
 
 @api.route('/categories', methods=['POST'])
+@login_required
 def api_create_category():
     """API endpoint to create a new category"""
+    
+    # Get current user
+    user_id = get_user_id()
+    
     data = request.json
     name = data.get('name', '').strip()
     is_body_weight_exercise = data.get('is_body_weight_exercise', False)
@@ -595,7 +636,7 @@ def api_create_category():
     
     if name:
         try:
-            category = services.get_or_create_category(name, is_body_mass=is_body_weight_exercise)
+            category = services.get_or_create_category(name, user_id, is_body_mass=is_body_weight_exercise)
             return jsonify(category.to_dict())
         except Exception as e:
             return jsonify({'error': str(e)}), 400
@@ -603,10 +644,15 @@ def api_create_category():
     return jsonify({'error': 'Name is required'}), 400
 
 @api.route('/categories/<int:category_id>', methods=['DELETE'])
+@login_required
 def api_delete_category(category_id):
     """API endpoint to delete a category"""
     logger.info(f"API request to delete category {category_id}")
-    success = services.delete_category(category_id)
+    
+    # Get current user
+    user_id = get_user_id()
+    
+    success = services.delete_category(category_id, user_id)
     logger.info(f"Delete category {category_id} result: {success}")
     return jsonify({'success': success})
 
