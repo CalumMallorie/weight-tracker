@@ -1,19 +1,16 @@
-# Release v2.5.0 - Documentation Improvements
+# Release v2.5.1 - Tag Update
 
-This release includes comprehensive Claude workflow documentation updates:
+This release includes a tag update for the main branch:
 
-- Add mandatory feature completion tagging requirements
-- Include semantic versioning guidelines and examples  
-- Add maintenance task guidance for branch validation
-- Provide clear workflow patterns and examples
+- Updated tag to v2.5.1 for main branch
+- Patch release for minor improvements
 
 ## Changes
-- Updated CLAUDE.md with feature tagging requirements
-- Added branch validation workflow documentation
-- Included maintenance task guidance
+- Updated tag reference to v2.5.1
+- Prepared for main branch tag update
 
 ## Git Tag
-This release is tagged as: `v2.5.0-documentation-improvements`
+This release is tagged as: `v2.5.1`
 
 The tag will be pushed when this PR is merged.
 
