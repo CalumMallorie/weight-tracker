@@ -1,0 +1,51 @@
+{% extends "auth/base.html" %}
+
+{% block title %}Sign In - Weight Tracker{% endblock %}
+
+{% block header %}Welcome Back{% endblock %}
+{% block subtitle %}Sign in to continue tracking your progress{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+        {{ form.login.label(class="form-label") }}
+        {{ form.login(class="form-control", placeholder="Enter your username or email") }}
+        {% if form.login.errors %}
+            <div class="field-errors">
+                {% for error in form.login.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control", placeholder="Enter your password") }}
+        {% if form.password.errors %}
+            <div class="field-errors">
+                {% for error in form.password.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="checkbox-group">
+        {{ form.remember_me() }}
+        {{ form.remember_me.label() }}
+    </div>
+
+    {{ form.submit(class="btn") }}
+</form>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    <a href="{{ url_for('auth.register') }}">Create an account</a>
+    <span class="separator">|</span>
+    <a href="{{ url_for('auth.reset_password_request') }}">Forgot password?</a>
+</div>
+{% endblock %}
