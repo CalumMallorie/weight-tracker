@@ -5,10 +5,13 @@ from logging.handlers import RotatingFileHandler
 import sys
 from .models import db
 from .routes import main as main_blueprint, api
+from .auth_routes import auth_bp
+from .auth import init_login
 from . import services
 from . import migration
 from pathlib import Path
 import threading
+import secrets
 
 def create_app(test_config=None):
     """Application factory function"""
@@ -25,9 +28,28 @@ def create_app(test_config=None):
         db_path = os.environ.get('DATABASE_PATH', 'weight_tracker.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        
+        # Authentication configuration
+        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+        app.config['WTF_CSRF_ENABLED'] = True
+        app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
+        
+        # Session configuration for security
+        app.config['SESSION_COOKIE_SECURE'] = os.environ.get('HTTPS', 'false').lower() == 'true'
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+        
+        # Development mode flag for password reset tokens
+        app.config['DEVELOPMENT'] = os.environ.get('FLASK_ENV') == 'development'
     else:
         # Test configuration
         app.config.update(test_config)
+        # Ensure test config has required auth settings
+        if 'SECRET_KEY' not in app.config:
+            app.config['SECRET_KEY'] = 'test-secret-key'
+        if 'WTF_CSRF_ENABLED' not in app.config:
+            app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for tests
     
     # Set up logging
     configure_logging(app)
@@ -35,9 +57,13 @@ def create_app(test_config=None):
     # Initialize extensions
     db.init_app(app)
     
+    # Initialize Flask-Login
+    init_login(app)
+    
     # Register blueprints
     app.register_blueprint(main_blueprint)
     app.register_blueprint(api)
+    app.register_blueprint(auth_bp)
     
     # Create database tables and migrate if needed
     with app.app_context():

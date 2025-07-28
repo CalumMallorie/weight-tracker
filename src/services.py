@@ -27,39 +27,51 @@ def create_tables() -> None:
         logger.error(f"Error creating tables: {str(e)}")
         # Continue anyway, as the application might still work with existing tables
 
-def create_default_category() -> WeightCategory:
-    """Create default 'Body Mass' category if it doesn't exist"""
-    body_mass = WeightCategory.query.filter_by(name="Body Mass").first()
+def create_default_category(user_id: Optional[int] = None) -> WeightCategory:
+    """Create default 'Body Mass' category if it doesn't exist for the given user"""
+    if user_id is None:
+        # For backwards compatibility, check for existing Body Mass without user_id
+        body_mass = WeightCategory.query.filter_by(name="Body Mass", user_id=None).first()
+        if not body_mass:
+            # Check if there's already a Body Mass category with any user_id
+            body_mass = WeightCategory.query.filter_by(name="Body Mass").first()
+    else:
+        body_mass = WeightCategory.query.filter_by(name="Body Mass", user_id=user_id).first()
+    
     if not body_mass:
-        logger.info("Creating default 'Body Mass' category")
-        body_mass = WeightCategory(name="Body Mass", is_body_mass=True)
+        logger.info(f"Creating default 'Body Mass' category for user_id: {user_id}")
+        body_mass = WeightCategory(name="Body Mass", is_body_mass=True, user_id=user_id)
         db.session.add(body_mass)
         db.session.commit()
         logger.info(f"Default category created with ID: {body_mass.id}")
     return body_mass
 
-def get_or_create_category(name: str, is_body_mass: bool = False) -> WeightCategory:
-    """Get an existing category or create a new one"""
-    category = WeightCategory.query.filter_by(name=name).first()
+def get_or_create_category(name: str, user_id: int, is_body_mass: bool = False) -> WeightCategory:
+    """Get an existing category or create a new one for the given user"""
+    category = WeightCategory.query.filter_by(name=name, user_id=user_id).first()
     if not category:
-        logger.info(f"Creating new category: {name}")
-        category = WeightCategory(name=name, is_body_mass=is_body_mass)
+        logger.info(f"Creating new category: {name} for user_id: {user_id}")
+        category = WeightCategory(name=name, is_body_mass=is_body_mass, user_id=user_id)
         db.session.add(category)
         db.session.commit()
         logger.info(f"Category created with ID: {category.id}")
     return category
 
-def get_all_categories() -> List[WeightCategory]:
-    """Get all weight categories ordered by name"""
-    logger.info("Retrieving all weight categories")
-    categories = WeightCategory.query.order_by(WeightCategory.name).all()
-    logger.info(f"Retrieved {len(categories)} categories total")
+def get_all_categories(user_id: Optional[int] = None) -> List[WeightCategory]:
+    """Get all weight categories for the given user ordered by name"""
+    logger.info(f"Retrieving weight categories for user_id: {user_id}")
+    if user_id is None:
+        # For backwards compatibility, get categories without user_id
+        categories = WeightCategory.query.filter_by(user_id=None).order_by(WeightCategory.name).all()
+    else:
+        categories = WeightCategory.query.filter_by(user_id=user_id).order_by(WeightCategory.name).all()
+    logger.info(f"Retrieved {len(categories)} categories for user_id: {user_id}")
     return categories
 
-def delete_category(category_id: int) -> bool:
-    """Delete a category and all its entries by ID"""
-    logger.info(f"Attempting to delete category with ID: {category_id}")
-    category = WeightCategory.query.get(category_id)
+def delete_category(category_id: int, user_id: int) -> bool:
+    """Delete a category and all its entries by ID for a specific user"""
+    logger.info(f"Attempting to delete category with ID: {category_id} for user_id: {user_id}")
+    category = WeightCategory.query.filter_by(id=category_id, user_id=user_id).first()
     if category:
         if category.is_body_mass:
             logger.warning(f"Cannot delete body mass category (ID: {category_id})")
@@ -69,7 +81,7 @@ def delete_category(category_id: int) -> bool:
         db.session.commit()
         logger.info(f"Category with ID {category_id} and all its entries deleted successfully")
         return True
-    logger.warning(f"Category with ID {category_id} not found for deletion")
+    logger.warning(f"Category with ID {category_id} not found for user_id: {user_id}")
     return False
 
 def save_weight_entry(
@@ -92,13 +104,19 @@ def save_weight_entry(
     
     if category_id is None:
         # Use default Body Mass category if none provided
-        category = create_default_category()
+        category = create_default_category(user_id)
         category_id = category.id
     
-    category = WeightCategory.query.get(category_id)
+    # Get category ensuring it belongs to the user
+    if user_id is not None:
+        category = WeightCategory.query.filter_by(id=category_id, user_id=user_id).first()
+    else:
+        # For backwards compatibility
+        category = WeightCategory.query.get(category_id)
+    
     if not category:
-        logger.error(f"Category with ID {category_id} not found")
-        raise ValueError(f"Category with ID {category_id} not found")
+        logger.error(f"Category with ID {category_id} not found for user_id: {user_id}")
+        raise ValueError(f"Category with ID {category_id} not found for user_id: {user_id}")
     
     # Check if 'is_body_weight_exercise' attribute exists to ensure backward compatibility
     is_body_weight_exercise = False
@@ -117,7 +135,7 @@ def save_weight_entry(
             reps = 1
             
         # For body weight exercises, use the most recent body mass entry as the weight
-        most_recent_body_mass = get_most_recent_body_mass()
+        most_recent_body_mass = get_most_recent_body_mass(user_id)
         if most_recent_body_mass:
             weight = most_recent_body_mass.weight
             unit = most_recent_body_mass.unit
@@ -155,6 +173,10 @@ def save_weight_entry(
             'category_id': category_id,
             'created_at': current_time
         }
+        
+        # Add user_id if it exists in the schema
+        if 'user_id' in columns and user_id is not None:
+            entry_data['user_id'] = user_id
             
         # Only include reps if column exists
         if 'reps' in columns and reps is not None:
@@ -187,16 +209,22 @@ def save_weight_entry(
             raise ValueError(f"Database operation failed: {str(e)}")
         raise
 
-def delete_entry(entry_id: int) -> bool:
-    """Delete an entry by ID"""
-    logger.info(f"Attempting to delete entry with ID: {entry_id}")
-    entry = WeightEntry.query.get(entry_id)
+def delete_entry(entry_id: int, user_id: Optional[int] = None) -> bool:
+    """Delete an entry by ID for a specific user"""
+    logger.info(f"Attempting to delete entry with ID: {entry_id} for user_id: {user_id}")
+    
+    if user_id is not None:
+        entry = WeightEntry.query.filter_by(id=entry_id, user_id=user_id).first()
+    else:
+        # For backwards compatibility
+        entry = WeightEntry.query.get(entry_id)
+    
     if entry:
         db.session.delete(entry)
         db.session.commit()
         logger.info(f"Entry with ID {entry_id} deleted successfully")
         return True
-    logger.warning(f"Entry with ID {entry_id} not found for deletion")
+    logger.warning(f"Entry with ID {entry_id} not found for user_id: {user_id}")
     return False
 
 def update_entry(
@@ -204,7 +232,8 @@ def update_entry(
     weight: float,
     unit: str,
     category_id: int,
-    reps: Optional[int] = None
+    reps: Optional[int] = None,
+    user_id: Optional[int] = None
 ) -> Optional[WeightEntry]:
     """Update an existing weight entry
     
@@ -218,17 +247,29 @@ def update_entry(
     Returns:
         Updated entry or None if entry not found
     """
-    logger.info(f"Attempting to update entry {entry_id} with weight={weight}{unit}, category_id={category_id}, reps={reps}")
+    logger.info(f"Attempting to update entry {entry_id} with weight={weight}{unit}, category_id={category_id}, reps={reps} for user_id: {user_id}")
     
-    entry = WeightEntry.query.get(entry_id)
+    # Get entry ensuring it belongs to the user
+    if user_id is not None:
+        entry = WeightEntry.query.filter_by(id=entry_id, user_id=user_id).first()
+    else:
+        # For backwards compatibility
+        entry = WeightEntry.query.get(entry_id)
+    
     if not entry:
-        logger.warning(f"Entry {entry_id} not found for update")
+        logger.warning(f"Entry {entry_id} not found for user_id: {user_id}")
         return None
     
-    category = WeightCategory.query.get(category_id)
+    # Get category ensuring it belongs to the user
+    if user_id is not None:
+        category = WeightCategory.query.filter_by(id=category_id, user_id=user_id).first()
+    else:
+        # For backwards compatibility
+        category = WeightCategory.query.get(category_id)
+    
     if not category:
-        logger.error(f"Category with ID {category_id} not found")
-        raise ValueError(f"Category with ID {category_id} not found")
+        logger.error(f"Category with ID {category_id} not found for user_id: {user_id}")
+        raise ValueError(f"Category with ID {category_id} not found for user_id: {user_id}")
     
     # Check if 'is_body_weight_exercise' attribute exists to ensure backward compatibility
     is_body_weight_exercise = False
@@ -247,7 +288,7 @@ def update_entry(
             reps = 1
             
         # For body weight exercises, use the most recent body mass entry as the weight
-        most_recent_body_mass = get_most_recent_body_mass()
+        most_recent_body_mass = get_most_recent_body_mass(user_id)
         if most_recent_body_mass:
             weight = most_recent_body_mass.weight
             unit = most_recent_body_mass.unit
@@ -292,10 +333,11 @@ def update_entry(
 
 def get_entries_by_time_window(
     time_window: str, 
-    category_id: Optional[int] = None
+    category_id: Optional[int] = None,
+    user_id: Optional[int] = None
 ) -> List[WeightEntry]:
-    """Get entries based on time window (week, month, year, all) and optional category"""
-    logger.info(f"Retrieving entries for time window: {time_window}, category_id: {category_id}")
+    """Get entries based on time window (week, month, year, all) and optional category for a specific user"""
+    logger.info(f"Retrieving entries for time window: {time_window}, category_id: {category_id}, user_id: {user_id}")
     try:
         now = datetime.now(UTC)
         
@@ -315,8 +357,15 @@ def get_entries_by_time_window(
         query_parts = [f"SELECT {columns_sql} FROM weight_entry"]
         params = {}
         
-        # Add category filter if provided
+        # Add filters
         where_clauses = []
+        
+        # Add user filter if provided and user_id column exists
+        if user_id is not None and "user_id" in columns:
+            where_clauses.append("weight_entry.user_id = :user_id")
+            params["user_id"] = user_id
+        
+        # Add category filter if provided
         if category_id is not None:
             where_clauses.append("weight_entry.category_id = :category_id")
             params["category_id"] = category_id
@@ -360,15 +409,22 @@ def get_entries_by_time_window(
         logger.error(f"Error retrieving entries: {str(e)}")
         return []
 
-def get_all_entries(category_id: Optional[int] = None) -> List[WeightEntry]:
-    """Get all entries, optionally filtered by category"""
-    logger.info(f"Retrieving all entries, category_id: {category_id}")
+def get_all_entries(category_id: Optional[int] = None, user_id: Optional[int] = None) -> List[WeightEntry]:
+    """Get all entries, optionally filtered by category and user"""
+    logger.info(f"Retrieving all entries, category_id: {category_id}, user_id: {user_id}")
     try:
         query = WeightEntry.query.order_by(WeightEntry.created_at.desc())
+        
+        # Add user filter if provided
+        if user_id is not None:
+            query = query.filter_by(user_id=user_id)
+        
+        # Add category filter if provided    
         if category_id is not None:
             query = query.filter_by(category_id=category_id)
+            
         entries = query.all()
-        logger.info(f"Retrieved {len(entries)} entries")
+        logger.info(f"Retrieved {len(entries)} entries for user_id: {user_id}")
         return entries
     except Exception as e:
         logger.error(f"Error retrieving entries: {str(e)}")
@@ -764,22 +820,31 @@ def migrate_old_entries_to_body_mass() -> None:
         logger.error(f"Error during migration: {str(e)}")
         logger.info("Continuing with application startup despite migration error")
 
-def get_most_recent_body_mass() -> Optional[WeightEntry]:
-    """Get the most recent body mass entry for use in body weight exercises"""
-    logger.info("Retrieving most recent body mass entry")
+def get_most_recent_body_mass(user_id: Optional[int] = None) -> Optional[WeightEntry]:
+    """Get the most recent body mass entry for use in body weight exercises for a specific user"""
+    logger.info(f"Retrieving most recent body mass entry for user_id: {user_id}")
     
-    # Find the body mass category
-    body_mass_category = WeightCategory.query.filter_by(is_body_mass=True).first()
+    # Find the body mass category for this user
+    if user_id is not None:
+        body_mass_category = WeightCategory.query.filter_by(is_body_mass=True, user_id=user_id).first()
+    else:
+        # For backwards compatibility
+        body_mass_category = WeightCategory.query.filter_by(is_body_mass=True).first()
+    
     if not body_mass_category:
-        logger.warning("Body mass category not found")
+        logger.warning(f"Body mass category not found for user_id: {user_id}")
         return None
     
-    # Find the most recent entry
-    most_recent = WeightEntry.query.filter_by(category_id=body_mass_category.id).order_by(WeightEntry.created_at.desc()).first()
+    # Find the most recent entry for this user
+    query = WeightEntry.query.filter_by(category_id=body_mass_category.id)
+    if user_id is not None:
+        query = query.filter_by(user_id=user_id)
+    
+    most_recent = query.order_by(WeightEntry.created_at.desc()).first()
     
     if most_recent:
         logger.info(f"Found most recent body mass entry: {most_recent.weight}{most_recent.unit} ({format_date(most_recent.created_at)})")
     else:
-        logger.info("No body mass entries found")
+        logger.info(f"No body mass entries found for user_id: {user_id}")
     
     return most_recent 
