@@ -1,11 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from typing import Dict, Any, Optional
 import secrets
 
-from src.models import db, format_date
+from . import db, format_date
 
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
@@ -43,7 +43,7 @@ class User(UserMixin, db.Model):
         """Generate a secure reset token for password reset"""
         self.reset_token = secrets.token_urlsafe(32)
         # Token expires in 1 hour
-        self.reset_token_expires = datetime.now(UTC).replace(microsecond=0) + datetime.timedelta(hours=1)
+        self.reset_token_expires = datetime.now(UTC).replace(microsecond=0) + timedelta(hours=1)
         return self.reset_token
     
     def verify_reset_token(self, token: str) -> bool:
@@ -85,7 +85,7 @@ class User(UserMixin, db.Model):
     
     def get_stats(self) -> Dict[str, Any]:
         """Get user statistics"""
-        from src.models import WeightEntry, WeightCategory
+        from .weight import WeightEntry, WeightCategory
         
         total_entries = WeightEntry.query.filter_by(user_id=self.id).count()
         total_categories = WeightCategory.query.filter_by(user_id=self.id).count()

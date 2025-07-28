@@ -98,6 +98,18 @@
         .nav-links a:hover {
             text-decoration: underline;
         }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .username {
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 14px;
+        }
         .category-badge {
             background-color: #1f77b4;
             color: white;
@@ -401,6 +413,10 @@
             background-color: rgba(0, 0, 0, 0.7);
         }
         
+        [data-theme="dark"] .username {
+            color: #ffffff;
+        }
+        
         [data-theme="dark"] .close-button {
             color: #b0b0b0;
         }
@@ -418,6 +434,16 @@
                 <span class="dark-mode-icon">🌙</span>
             </button>
         </div>
+        
+        <!-- User Info Section -->
+        {% if current_user.is_authenticated %}
+        <div class="user-info">
+            <span class="username">{{ current_user.username }}</span>
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-secondary">Profile</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-primary">Logout</a>
+        </div>
+        {% endif %}
+        
         <a href="{{ url_for('main.manage_categories') }}" data-url="categories">Manage Categories</a>
     </div>
     

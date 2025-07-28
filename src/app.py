@@ -65,29 +65,30 @@ def create_app(test_config=None):
     app.register_blueprint(api)
     app.register_blueprint(auth_bp)
     
-    # Create database tables and migrate if needed
-    with app.app_context():
-        app.logger.info("Checking database and performing migrations if needed")
-        
-        # First verify if this is a mounted DB from a previous version that needs migration
-        db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-        if os.path.exists(db_path):
-            app.logger.info(f"Found existing database at {db_path}")
+    # Create database tables and migrate if needed (skip in test mode)
+    if not app.config.get('SKIP_MIGRATION', False):
+        with app.app_context():
+            app.logger.info("Checking database and performing migrations if needed")
             
-            # First run migration checks (handles older database versions)
-            app.logger.info("Running migration checks for existing database")
-            migration.check_and_migrate_database()
-            
-            # Then create any additional tables if needed
-            app.logger.info("Creating any missing tables")
-            services.create_tables()
-        else:
-            # If database doesn't exist, create it from scratch
-            app.logger.info("No existing database found, creating tables from scratch")
-            services.create_tables()
-            
-            # Then check and migrate schema if needed
-            migration.check_and_migrate_database()
+            # First verify if this is a mounted DB from a previous version that needs migration
+            db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+            if os.path.exists(db_path):
+                app.logger.info(f"Found existing database at {db_path}")
+                
+                # First run migration checks (handles older database versions)
+                app.logger.info("Running migration checks for existing database")
+                migration.check_and_migrate_database()
+                
+                # Then create any additional tables if needed
+                app.logger.info("Creating any missing tables")
+                services.create_tables()
+            else:
+                # If database doesn't exist, create it from scratch
+                app.logger.info("No existing database found, creating tables from scratch")
+                services.create_tables()
+                
+                # Then check and migrate schema if needed
+                migration.check_and_migrate_database()
         
         # Migrate old entries to the new schema
         services.migrate_old_entries_to_body_mass()
