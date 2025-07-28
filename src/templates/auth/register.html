@@ -1,0 +1,71 @@
+{% extends "auth/base.html" %}
+
+{% block title %}Register - Weight Tracker{% endblock %}
+
+{% block header %}Join Weight Tracker{% endblock %}
+{% block subtitle %}Create your account to start tracking your fitness journey{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control", placeholder="Choose a username") }}
+        {% if form.username.errors %}
+            <div class="field-errors">
+                {% for error in form.username.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", placeholder="Enter your email address") }}
+        {% if form.email.errors %}
+            <div class="field-errors">
+                {% for error in form.email.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control", placeholder="Create a secure password") }}
+        {% if form.password.errors %}
+            <div class="field-errors">
+                {% for error in form.password.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <small style="color: #7f8c8d; font-size: 14px; margin-top: 5px; display: block;">
+            Password must be at least 8 characters and include uppercase, lowercase, and a number.
+        </small>
+    </div>
+
+    <div class="form-group">
+        {{ form.confirm_password.label(class="form-label") }}
+        {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+        {% if form.confirm_password.errors %}
+            <div class="field-errors">
+                {% for error in form.confirm_password.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {{ form.submit(class="btn") }}
+</form>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    Already have an account? <a href="{{ url_for('auth.login') }}">Sign in here</a>
+</div>
+{% endblock %}
