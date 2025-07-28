@@ -13,12 +13,16 @@ def format_date(dt: datetime) -> str:
 
 class WeightCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
+    name = db.Column(db.String(50), nullable=False)
     is_body_mass = db.Column(db.Boolean, default=False)  # Special case for body mass (just weight, no reps)
     is_body_weight_exercise = db.Column(db.Boolean, default=False)  # For body weight exercises (just reps, no weight)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
     last_used_at = db.Column(db.DateTime, nullable=True)  # Track when the category was last used
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     entries = db.relationship('WeightEntry', backref='category', lazy=True, cascade="all, delete-orphan")
+    
+    # Ensure category names are unique per user, not globally
+    __table_args__ = (db.UniqueConstraint('name', 'user_id', name='_category_name_user_uc'),)
     
     def __repr__(self) -> str:
         return f"WeightCategory(id={self.id}, name={self.name}, is_body_mass={self.is_body_mass}, is_body_weight_exercise={self.is_body_weight_exercise})"
@@ -40,6 +44,7 @@ class WeightEntry(db.Model):
     unit = db.Column(db.String(10), nullable=False)  # 'kg' or 'lb'
     reps = db.Column(db.Integer, nullable=True)  # Number of repetitions (null for body mass)
     category_id = db.Column(db.Integer, db.ForeignKey('weight_category.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:

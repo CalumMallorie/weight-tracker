@@ -5,6 +5,7 @@ from typing import List, Dict, Optional, Any, Tuple
 from datetime import datetime, UTC
 
 from .models import db, WeightEntry, WeightCategory
+from .models.user import User
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -44,6 +45,8 @@ def check_and_migrate_database() -> None:
             migrate_db_v6()  # Add is_body_weight column
             migrate_db_v7()  # Rename is_body_weight to is_body_weight_exercise
             migrate_db_v8()  # Fix Body Mass category corruption
+            migrate_db_v9()  # Add user table
+            migrate_db_v10()  # Add user_id columns to existing tables
             
         logger.info("Database schema check and migrations completed")
     except Exception as e:
@@ -601,6 +604,162 @@ def migrate_db_v8() -> None:
         if connection:
             connection.close()
 
+def migrate_db_v9() -> None:
+    """Add user table for multi-user support"""
+    logger.info("Migrating database to v9: Adding user table")
+    
+    try:
+        # Get SQLite connection
+        connection = db.engine.raw_connection()
+        cursor = connection.cursor()
+        
+        # Check if user table already exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user'")
+        if cursor.fetchone():
+            logger.info("User table already exists, skipping creation")
+            return
+        
+        logger.info("Creating user table...")
+        
+        # Create user table
+        cursor.execute("""
+            CREATE TABLE user (
+                id INTEGER PRIMARY KEY,
+                username VARCHAR(80) NOT NULL UNIQUE,
+                email VARCHAR(120) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                is_active BOOLEAN DEFAULT 1,
+                last_login DATETIME,
+                reset_token VARCHAR(100) UNIQUE,
+                reset_token_expires DATETIME
+            )
+        """)
+        
+        # Create indexes for performance
+        cursor.execute("CREATE INDEX idx_user_username ON user(username)")
+        cursor.execute("CREATE INDEX idx_user_email ON user(email)")
+        
+        # Create default user for existing data
+        logger.info("Creating default user for existing data migration...")
+        
+        # Generate password hash for default user
+        from werkzeug.security import generate_password_hash
+        from datetime import datetime, UTC
+        
+        default_password_hash = generate_password_hash('changeme123')
+        now = datetime.now(UTC)
+        
+        cursor.execute("""
+            INSERT INTO user (username, email, password_hash, created_at, updated_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, ('default', 'default@example.com', default_password_hash, now, now, True))
+        
+        connection.commit()
+        
+        # Get the default user ID for use in v10 migration
+        cursor.execute("SELECT id FROM user WHERE username = 'default'")
+        default_user_id = cursor.fetchone()[0]
+        
+        logger.info(f"✅ User table created successfully with default user (ID: {default_user_id})")
+        logger.info("⚠️  Default user credentials: username='default', password='changeme123'")
+        logger.info("🔧 Please change the default password after migration!")
+        
+    except Exception as e:
+        logger.error(f"Error in migration v9: {str(e)}")
+        raise
+    finally:
+        if connection:
+            connection.close()
+    
+    logger.info("Database migration v9 completed successfully")
+
+def migrate_db_v10() -> None:
+    """Add user_id columns to existing tables and assign to default user"""
+    logger.info("Migrating database to v10: Adding user_id columns")
+    
+    try:
+        # Get SQLite connection
+        connection = db.engine.raw_connection()
+        cursor = connection.cursor()
+        
+        # Get default user ID
+        cursor.execute("SELECT id FROM user WHERE username = 'default'")
+        result = cursor.fetchone()
+        if not result:
+            raise Exception("Default user not found! Run migration v9 first.")
+        
+        default_user_id = result[0]
+        logger.info(f"Using default user ID: {default_user_id}")
+        
+        # Check and add user_id to weight_category table
+        cursor.execute("PRAGMA table_info(weight_category)")
+        columns = cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        if "user_id" not in column_names:
+            logger.info("Adding user_id column to weight_category table...")
+            
+            # Add user_id column
+            cursor.execute("ALTER TABLE weight_category ADD COLUMN user_id INTEGER REFERENCES user(id)")
+            
+            # Update existing categories to belong to default user
+            cursor.execute("UPDATE weight_category SET user_id = ? WHERE user_id IS NULL", (default_user_id,))
+            
+            # Get count of updated categories
+            cursor.execute("SELECT COUNT(*) FROM weight_category WHERE user_id = ?", (default_user_id,))
+            category_count = cursor.fetchone()[0]
+            
+            logger.info(f"✅ Assigned {category_count} existing categories to default user")
+        else:
+            logger.info("user_id column already exists in weight_category table")
+        
+        # Check and add user_id to weight_entry table
+        cursor.execute("PRAGMA table_info(weight_entry)")
+        columns = cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        if "user_id" not in column_names:
+            logger.info("Adding user_id column to weight_entry table...")
+            
+            # Add user_id column
+            cursor.execute("ALTER TABLE weight_entry ADD COLUMN user_id INTEGER REFERENCES user(id)")
+            
+            # Update existing entries to belong to default user
+            cursor.execute("UPDATE weight_entry SET user_id = ? WHERE user_id IS NULL", (default_user_id,))
+            
+            # Get count of updated entries
+            cursor.execute("SELECT COUNT(*) FROM weight_entry WHERE user_id = ?", (default_user_id,))
+            entry_count = cursor.fetchone()[0]
+            
+            logger.info(f"✅ Assigned {entry_count} existing weight entries to default user")
+        else:
+            logger.info("user_id column already exists in weight_entry table")
+        
+        # Create indexes for performance
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_weight_category_user_id ON weight_category(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_weight_entry_user_id ON weight_entry(user_id)")
+            logger.info("✅ Created indexes for user_id columns")
+        except Exception as e:
+            logger.warning(f"Index creation warning (may already exist): {str(e)}")
+        
+        # Update table constraints to ensure category names are unique per user
+        # Note: SQLite doesn't support adding constraints to existing tables,
+        # so we'll rely on application logic for now
+        
+        connection.commit()
+        logger.info("✅ Database migration v10 completed successfully")
+        logger.info("All existing data has been assigned to the default user")
+        
+    except Exception as e:
+        logger.error(f"Error in migration v10: {str(e)}")
+        raise
+    finally:
+        if connection:
+            connection.close()
+
 # Update migrations list
 MIGRATIONS = [
     migrate_db_v1,
@@ -608,5 +767,7 @@ MIGRATIONS = [
     migrate_db_v3,
     migrate_db_v4,
     migrate_db_v5,
-    migrate_db_v8
+    migrate_db_v8,
+    migrate_db_v9,
+    migrate_db_v10
 ] 
