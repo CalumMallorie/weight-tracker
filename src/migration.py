@@ -4,8 +4,7 @@ from sqlalchemy import inspect, text
 from typing import List, Dict, Optional, Any, Tuple
 from datetime import datetime, UTC
 
-from .models import db, WeightEntry, WeightCategory
-from .models.user import User
+from .models import db, WeightEntry, WeightCategory, User
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -21,10 +20,28 @@ def check_and_migrate_database() -> None:
         # Check if database is completely new or needs complete setup
         needs_full_setup = False
         
-        # Check if weight_entry table exists
+        # Check if weight_entry table exists before creating any tables
         if not inspector.has_table("weight_entry"):
             logger.info("weight_entry table doesn't exist yet, performing full setup")
             needs_full_setup = True
+            
+        # Apply full setup if needed, or specific migrations
+        if needs_full_setup:
+            # For fresh installations, create all tables first
+            db.create_all()
+            # Create default user first
+            migrate_db_v9()  # Add user table with default user
+            # Refresh the session to see the newly created user
+            db.session.commit()
+            db.session.close()  # Clear session cache
+            # Now create default categories with user_id
+            from . import services
+            # Get the default user we just created
+            default_user = User.query.filter_by(username='default').first()
+            if default_user:
+                services.create_default_category(user_id=default_user.id)
+            # For fresh installations, there are no old entries to migrate
+            # services.migrate_old_entries_to_body_mass()
         else:
             # Check weight_entry schema for missing columns
             missing_weight_entry_columns = _check_weight_entry_schema(inspector)
@@ -36,11 +53,6 @@ def check_and_migrate_database() -> None:
             if missing_weight_category_columns:
                 _migrate_weight_category_schema(missing_weight_category_columns)
                 
-        # Apply full setup if needed, or specific migrations
-        if needs_full_setup:
-            create_tables()
-            migrate_old_entries_to_body_mass()
-        else:
             # Apply subsequent migrations as needed
             migrate_db_v6()  # Add is_body_weight column
             migrate_db_v7()  # Rename is_body_weight to is_body_weight_exercise
@@ -477,6 +489,10 @@ def _check_weight_entry_schema(inspector) -> List[tuple]:
     if "reps" not in column_names:
         missing_columns.append(("reps", "INTEGER"))
     
+    # Check for missing notes column
+    if "notes" not in column_names:
+        missing_columns.append(("notes", "TEXT"))
+    
     logger.info(f"Missing columns in weight_entry: {missing_columns}")
     return missing_columns
 
@@ -615,31 +631,38 @@ def migrate_db_v9() -> None:
         
         # Check if user table already exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user'")
-        if cursor.fetchone():
-            logger.info("User table already exists, skipping creation")
-            return
+        table_exists = cursor.fetchone()
         
-        logger.info("Creating user table...")
-        
-        # Create user table
-        cursor.execute("""
-            CREATE TABLE user (
-                id INTEGER PRIMARY KEY,
-                username VARCHAR(80) NOT NULL UNIQUE,
-                email VARCHAR(120) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL,
-                is_active BOOLEAN DEFAULT 1,
-                last_login DATETIME,
-                reset_token VARCHAR(100) UNIQUE,
-                reset_token_expires DATETIME
-            )
-        """)
-        
-        # Create indexes for performance
-        cursor.execute("CREATE INDEX idx_user_username ON user(username)")
-        cursor.execute("CREATE INDEX idx_user_email ON user(email)")
+        if table_exists:
+            logger.info("User table already exists, checking for default user...")
+            # Check if default user exists
+            cursor.execute("SELECT id FROM user WHERE username = 'default'")
+            if cursor.fetchone():
+                logger.info("Default user already exists, skipping creation")
+                return
+            else:
+                logger.info("Default user missing, creating it...")
+        else:
+            logger.info("Creating user table...")
+            # Create user table
+            cursor.execute("""
+                CREATE TABLE user (
+                    id INTEGER PRIMARY KEY,
+                    username VARCHAR(80) NOT NULL UNIQUE,
+                    email VARCHAR(120) NOT NULL UNIQUE,
+                    password_hash VARCHAR(255) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    is_active BOOLEAN DEFAULT 1,
+                    last_login DATETIME,
+                    reset_token VARCHAR(100) UNIQUE,
+                    reset_token_expires DATETIME
+                )
+            """)
+            
+            # Create indexes for performance
+            cursor.execute("CREATE INDEX idx_user_username ON user(username)")
+            cursor.execute("CREATE INDEX idx_user_email ON user(email)")
         
         # Create default user for existing data
         logger.info("Creating default user for existing data migration...")

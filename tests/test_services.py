@@ -18,17 +18,17 @@ pytestmark = pytest.mark.unit
 class TestWeightEntrySaving:
     """Test weight entry creation and saving logic"""
     
-    def test_save_body_weight_exercise_uses_body_mass(self, app, sample_categories):
+    def test_save_body_weight_exercise_uses_body_mass(self, app, sample_categories, default_user):
         """Body weight exercises should use current body mass, not zero"""
         with app.app_context():
             # Add a body mass entry first
             body_mass_entry = services.save_weight_entry(
-                75.5, 'kg', sample_categories['body_mass'].id, None
+                75.5, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id
             )
             
             # Save a body weight exercise (push-ups)
             pushup_entry = services.save_weight_entry(
-                0, 'kg', sample_categories['pushups'].id, 10
+                0, 'kg', sample_categories['pushups'].id, 10, user_id=default_user.id
             )
             
             # Should use body mass weight, not zero
@@ -37,12 +37,12 @@ class TestWeightEntrySaving:
             assert pushup_entry.reps == 10
             assert pushup_entry.category_id == sample_categories['pushups'].id
     
-    def test_save_body_weight_exercise_without_body_mass_uses_fallback(self, app, sample_categories):
+    def test_save_body_weight_exercise_without_body_mass_uses_fallback(self, app, sample_categories, default_user):
         """Body weight exercises without body mass should use fallback weight"""
         with app.app_context():
             # No body mass entries exist
             pushup_entry = services.save_weight_entry(
-                0, 'kg', sample_categories['pushups'].id, 15
+                0, 'kg', sample_categories['pushups'].id, 15, user_id=default_user.id
             )
             
             # Should use fallback weight (70.0), not zero
@@ -50,22 +50,22 @@ class TestWeightEntrySaving:
             assert pushup_entry.unit == 'kg'
             assert pushup_entry.reps == 15
     
-    def test_save_body_mass_entry_saves_exact_weight(self, app, sample_categories):
+    def test_save_body_mass_entry_saves_exact_weight(self, app, sample_categories, default_user):
         """Body mass entries should save exactly what's entered"""
         with app.app_context():
             entry = services.save_weight_entry(
-                82.3, 'kg', sample_categories['body_mass'].id, None
+                82.3, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id
             )
             
             assert entry.weight == 82.3
             assert entry.unit == 'kg'
             assert entry.reps is None
     
-    def test_save_regular_exercise_entry(self, app, sample_categories):
+    def test_save_regular_exercise_entry(self, app, sample_categories, default_user):
         """Regular exercises should save weight and reps normally"""
         with app.app_context():
             entry = services.save_weight_entry(
-                100.0, 'kg', sample_categories['benchpress'].id, 8
+                100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id
             )
             
             assert entry.weight == 100.0
@@ -76,13 +76,13 @@ class TestWeightEntrySaving:
         """Saving with non-existent category should raise error"""
         with app.app_context():
             with pytest.raises(ValueError, match="Category with ID 999 not found"):
-                services.save_weight_entry(100.0, 'kg', 999, 10)
+                services.save_weight_entry(100.0, 'kg', 999, 10, user_id=default_user.id)
 
 
 class TestDataRetrievalAndOrdering:
     """Test data retrieval and ordering logic"""
     
-    def test_entries_ordered_by_most_recent_first(self, app, sample_categories):
+    def test_entries_ordered_by_most_recent_first(self, app, sample_categories, default_user):
         """Entries should be ordered by most recent first (DESC)"""
         with app.app_context():
             # Create entries with specific timestamps
@@ -120,7 +120,7 @@ class TestDataRetrievalAndOrdering:
             assert entries[1].weight == 100.0  # Older entry second
             assert entries[0].created_at > entries[1].created_at
     
-    def test_get_most_recent_body_mass_returns_latest(self, app, sample_categories):
+    def test_get_most_recent_body_mass_returns_latest(self, app, sample_categories, default_user):
         """Should return the most recent body mass entry"""
         with app.app_context():
             # Add multiple body mass entries
@@ -158,11 +158,11 @@ class TestDataRetrievalAndOrdering:
 class TestEntryUpdate:
     """Test entry update logic"""
     
-    def test_update_body_weight_exercise_uses_current_body_mass(self, app, sample_categories):
+    def test_update_body_weight_exercise_uses_current_body_mass(self, app, sample_categories, default_user):
         """Updating body weight exercise should use current body mass"""
         with app.app_context():
             # Create initial body mass
-            services.save_weight_entry(70.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(70.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             # Create body weight exercise
             pushup_entry = services.save_weight_entry(
@@ -171,7 +171,7 @@ class TestEntryUpdate:
             assert pushup_entry.weight == 70.0
             
             # Update body mass
-            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             # Update the body weight exercise
             updated_entry = services.update_entry(
@@ -182,11 +182,11 @@ class TestEntryUpdate:
             assert updated_entry.weight == 75.0
             assert updated_entry.reps == 12
     
-    def test_update_regular_exercise_preserves_weight(self, app, sample_categories):
+    def test_update_regular_exercise_preserves_weight(self, app, sample_categories, default_user):
         """Updating regular exercise should preserve the weight value"""
         with app.app_context():
             entry = services.save_weight_entry(
-                100.0, 'kg', sample_categories['benchpress'].id, 8
+                100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id
             )
             
             updated_entry = services.update_entry(
@@ -200,12 +200,12 @@ class TestEntryUpdate:
 class TestPlotDataGeneration:
     """Test plot data generation and processing"""
     
-    def test_create_weight_plot_with_data(self, app, sample_categories):
+    def test_create_weight_plot_with_data(self, app, sample_categories, default_user):
         """Plot creation should work with valid data"""
         with app.app_context():
             # Add some entries
-            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
-            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10)
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
+            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10, user_id=default_user.id)
             
             entries = services.get_entries_by_time_window(
                 'month', sample_categories['benchpress'].id
@@ -218,7 +218,7 @@ class TestPlotDataGeneration:
             assert isinstance(plot_json, str)
             assert len(plot_json) > 0
     
-    def test_create_weight_plot_with_no_data(self, app, sample_categories):
+    def test_create_weight_plot_with_no_data(self, app, sample_categories, default_user):
         """Plot creation should handle empty data gracefully"""
         with app.app_context():
             entries = services.get_entries_by_time_window(

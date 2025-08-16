@@ -85,13 +85,13 @@ def create_app(test_config=None):
             else:
                 # If database doesn't exist, create it from scratch
                 app.logger.info("No existing database found, creating tables from scratch")
-                services.create_tables()
-                
-                # Then check and migrate schema if needed
+                # For new databases, the migration system handles both table creation and setup
                 migration.check_and_migrate_database()
         
-        # Migrate old entries to the new schema
-        services.migrate_old_entries_to_body_mass()
+        # Migrate old entries to the new schema (only needed for existing databases)
+        # For new databases, this is handled by the migration system
+        if db_path != ":memory:" and os.path.exists(db_path):
+            services.migrate_old_entries_to_body_mass()
         
         # Verify schema is consistent
         schema_verification = migration.verify_model_schema()
