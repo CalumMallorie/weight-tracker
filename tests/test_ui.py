@@ -24,7 +24,7 @@ class TestIndexPageRendering:
             response = client.get('/')
             assert response.status_code == 200
     
-    def test_index_shows_most_recent_entry_data(self, app, client, sample_categories):
+    def test_index_shows_most_recent_entry_data(self, app, client, sample_categories, default_user):
         """Index page should display most recent entry information"""
         with app.app_context():
             # Create entries with different dates
@@ -35,6 +35,7 @@ class TestIndexPageRendering:
                 weight=100.0,
                 unit='kg',
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=5,
                 created_at=old_date
             )
@@ -42,6 +43,7 @@ class TestIndexPageRendering:
                 weight=120.0,
                 unit='kg', 
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=8,
                 created_at=recent_date
             )
@@ -95,11 +97,11 @@ class TestFormSubmission:
             response = client.post('/', data=form_data, follow_redirects=False)
             assert response.status_code == 302  # Redirect after successful submission
     
-    def test_body_weight_exercise_form_submission(self, app, client, sample_categories):
+    def test_body_weight_exercise_form_submission(self, app, client, sample_categories, default_user):
         """Body weight exercise form should work correctly"""
         with app.app_context():
             # Add body mass first
-            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             form_data = {
                 'weight': '',  # Empty weight for body weight exercise
@@ -112,7 +114,7 @@ class TestFormSubmission:
             assert response.status_code == 200
             
             # Verify entry was created correctly
-            entries = services.get_entries_by_time_window('all', sample_categories['pushups'].id)
+            entries = services.get_entries_by_time_window('all', sample_categories['pushups'].id, user_id=default_user.id)
             assert len(entries) == 1
             assert entries[0].weight == 75.0  # Should use body mass
     
@@ -147,12 +149,12 @@ class TestMobileResponsiveness:
             assert 'viewport' in html_content, "Should have viewport meta tag"
             assert 'width=device-width' in html_content, "Should set device width"
     
-    def test_plot_container_has_explicit_height(self, app, client, sample_categories):
+    def test_plot_container_has_explicit_height(self, app, client, sample_categories, default_user):
         """Plot container should have explicit height to prevent mobile cutoff"""
         with app.app_context():
             # Add data to generate a plot
-            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
-            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10)
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
+            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10, user_id=default_user.id)
             
             response = client.get(f'/?category={sample_categories["benchpress"].id}')
             assert response.status_code == 200
@@ -175,12 +177,12 @@ class TestMobileResponsiveness:
             # Should have responsive design elements
             assert 'max-width' in html_content or 'container' in html_content
     
-    def test_plot_mobile_cutoff_prevention(self, app, client, sample_categories):
+    def test_plot_mobile_cutoff_prevention(self, app, client, sample_categories, default_user):
         """Plot should have proper mobile configuration to prevent bottom cutoff"""
         with app.app_context():
             # Add data to generate a plot
-            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
-            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10)
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
+            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10, user_id=default_user.id)
             
             response = client.get(f'/?category={sample_categories["benchpress"].id}')
             assert response.status_code == 200
@@ -356,11 +358,11 @@ class TestNavigationAndLinks:
             # Should have links to other pages
             assert 'entries' in html_content or 'categories' in html_content
     
-    def test_time_filter_links_work(self, app, client, sample_categories):
+    def test_time_filter_links_work(self, app, client, sample_categories, default_user):
         """Time filter links should function correctly"""
         with app.app_context():
             # Add some test data
-            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
             
             # Test different time windows
             for window in ['week', 'month', 'year', 'all']:
@@ -408,7 +410,7 @@ class TestEntriesManagement:
             response = client.get('/entries')
             assert response.status_code == 200
     
-    def test_entries_list_shows_recent_first(self, app, client, sample_categories):
+    def test_entries_list_shows_recent_first(self, app, client, sample_categories, default_user):
         """Entries list should show most recent entries first"""
         with app.app_context():
             # Create entries with different dates
@@ -419,6 +421,7 @@ class TestEntriesManagement:
                 weight=100.0,
                 unit='kg',
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=5,
                 created_at=old_date
             )
@@ -426,6 +429,7 @@ class TestEntriesManagement:
                 weight=110.0,
                 unit='kg',
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=8,
                 created_at=recent_date
             )

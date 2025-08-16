@@ -59,7 +59,7 @@ class TestSQLInjectionPrevention:
                 # Database should still exist and be intact
                 assert isinstance(entries, list)
     
-    def test_sql_injection_in_category_creation(self, app, client):
+    def test_sql_injection_in_category_creation(self, app, client, default_user):
         """Test SQL injection attempts in category creation"""
         with app.app_context():
             malicious_names = [
@@ -77,7 +77,7 @@ class TestSQLInjectionPrevention:
                 assert response.status_code in [200, 201, 400, 422]
                 
                 # Verify database integrity
-                categories = services.get_all_categories()
+                categories = services.get_all_categories(user_id=default_user.id)
                 assert isinstance(categories, list)
                 assert len(categories) > 0  # Original categories should still exist
 
@@ -287,7 +287,7 @@ class TestAuthorizationBoundaries:
 class TestDataIntegrityUnderAttack:
     """Test that data integrity is maintained under various attack scenarios"""
     
-    def test_concurrent_malicious_requests(self, app, client, sample_categories):
+    def test_concurrent_malicious_requests(self, app, client, sample_categories, default_user):
         """Test handling of multiple malicious requests simultaneously"""
         import threading
         import time
@@ -326,9 +326,9 @@ class TestDataIntegrityUnderAttack:
                     f"Concurrent malicious request not properly handled: {status_code}"
             
             # Verify database is still intact
-            entries = services.get_all_entries()
+            entries = services.get_all_entries(user_id=default_user.id)
             assert isinstance(entries, list)
-            categories = services.get_all_categories() 
+            categories = services.get_all_categories(user_id=default_user.id) 
             assert isinstance(categories, list)
             assert len(categories) > 0
 

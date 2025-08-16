@@ -72,7 +72,7 @@ class TestWeightEntrySaving:
             assert entry.unit == 'kg'
             assert entry.reps == 8
     
-    def test_save_entry_with_invalid_category_raises_error(self, app):
+    def test_save_entry_with_invalid_category_raises_error(self, app, default_user):
         """Saving with non-existent category should raise error"""
         with app.app_context():
             with pytest.raises(ValueError, match="Category with ID 999 not found"):
@@ -94,6 +94,7 @@ class TestDataRetrievalAndOrdering:
                 weight=100.0,
                 unit='kg',
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=5,
                 created_at=old_date
             )
@@ -101,6 +102,7 @@ class TestDataRetrievalAndOrdering:
                 weight=110.0,
                 unit='kg', 
                 category_id=sample_categories['benchpress'].id,
+                user_id=default_user.id,
                 reps=8,
                 created_at=recent_date
             )
@@ -111,7 +113,7 @@ class TestDataRetrievalAndOrdering:
             
             # Retrieve entries
             entries = services.get_entries_by_time_window(
-                'all', sample_categories['benchpress'].id
+                'all', sample_categories['benchpress'].id, user_id=default_user.id
             )
             
             # Should be ordered with most recent first
@@ -131,12 +133,14 @@ class TestDataRetrievalAndOrdering:
                 weight=70.0,
                 unit='kg',
                 category_id=sample_categories['body_mass'].id,
+                user_id=default_user.id,
                 created_at=old_date
             )
             recent_entry = WeightEntry(
                 weight=75.0,
                 unit='kg',
                 category_id=sample_categories['body_mass'].id,
+                user_id=default_user.id,
                 created_at=recent_date
             )
             
@@ -145,13 +149,13 @@ class TestDataRetrievalAndOrdering:
             db.session.commit()
             
             # Should return most recent
-            most_recent = services.get_most_recent_body_mass()
+            most_recent = services.get_most_recent_body_mass(user_id=default_user.id)
             assert most_recent.weight == 75.0
     
-    def test_get_most_recent_body_mass_returns_none_when_empty(self, app):
+    def test_get_most_recent_body_mass_returns_none_when_empty(self, app, default_user):
         """Should return None when no body mass entries exist"""
         with app.app_context():
-            most_recent = services.get_most_recent_body_mass()
+            most_recent = services.get_most_recent_body_mass(user_id=default_user.id)
             assert most_recent is None
 
 
@@ -166,7 +170,7 @@ class TestEntryUpdate:
             
             # Create body weight exercise
             pushup_entry = services.save_weight_entry(
-                0, 'kg', sample_categories['pushups'].id, 10
+                0, 'kg', sample_categories['pushups'].id, 10, user_id=default_user.id
             )
             assert pushup_entry.weight == 70.0
             
@@ -175,7 +179,7 @@ class TestEntryUpdate:
             
             # Update the body weight exercise
             updated_entry = services.update_entry(
-                pushup_entry.id, 0, 'kg', sample_categories['pushups'].id, 12
+                pushup_entry.id, 0, 'kg', sample_categories['pushups'].id, 12, user_id=default_user.id
             )
             
             # Should use new body mass weight
