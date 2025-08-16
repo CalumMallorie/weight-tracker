@@ -9,17 +9,17 @@ from src.models import WeightEntry, WeightCategory
 from datetime import datetime, timedelta
 
 
-def test_enhanced_hover_information_regular_exercise(app):
+def test_enhanced_hover_information_regular_exercise(app, default_user):
     """Test that regular exercises show weight, reps, and date in hover"""
     with app.app_context():
         # Create a regular exercise category
-        category = get_or_create_category("Bench Press", is_body_mass=False)
+        category = get_or_create_category("Bench Press", user_id=default_user.id, is_body_mass=False)
         
         # Add a test entry
-        save_weight_entry(100.0, "kg", category.id, 10)
+        save_weight_entry(100.0, "kg", category.id, 10, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON
@@ -32,25 +32,25 @@ def test_enhanced_hover_information_regular_exercise(app):
         assert 'Reps: %{customdata[2]}' in hover_template
 
 
-def test_enhanced_hover_information_body_weight_exercise(app):
+def test_enhanced_hover_information_body_weight_exercise(app, default_user):
     """Test that body weight exercises show body weight, reps, and date in hover"""
     with app.app_context():
         # Create body mass category first
-        body_mass = get_or_create_category("Body Mass", is_body_mass=True)
-        save_weight_entry(75.0, "kg", body_mass.id, None)
+        body_mass = get_or_create_category("Body Mass", user_id=default_user.id, is_body_mass=True)
+        save_weight_entry(75.0, "kg", body_mass.id, None, user_id=default_user.id)
         
         # Create a body weight exercise category
-        category = get_or_create_category("Push-ups", is_body_mass=False)
+        category = get_or_create_category("Push-ups", user_id=default_user.id, is_body_mass=False)
         if hasattr(category, 'is_body_weight_exercise'):
             category.is_body_weight_exercise = True
             from src import services
             services.db.session.commit()
         
         # Add a test entry (will use body mass for weight)
-        save_weight_entry(0, "kg", category.id, 15)
+        save_weight_entry(0, "kg", category.id, 15, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON
@@ -63,17 +63,17 @@ def test_enhanced_hover_information_body_weight_exercise(app):
         assert 'Reps: %{customdata[2]}' in hover_template
 
 
-def test_enhanced_hover_information_body_mass(app):
+def test_enhanced_hover_information_body_mass(app, default_user):
     """Test that body mass entries show date and weight in hover"""
     with app.app_context():
         # Create body mass category
-        category = get_or_create_category("Body Mass", is_body_mass=True)
+        category = get_or_create_category("Body Mass", user_id=default_user.id, is_body_mass=True)
         
         # Add a test entry
-        save_weight_entry(75.0, "kg", category.id, None)
+        save_weight_entry(75.0, "kg", category.id, None, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON
@@ -86,17 +86,17 @@ def test_enhanced_hover_information_body_mass(app):
         assert 'Reps:' not in hover_template  # Should not show reps for body mass
 
 
-def test_enhanced_hover_with_volume_processing(app):
+def test_enhanced_hover_with_volume_processing(app, default_user):
     """Test that volume processing shows the calculated value plus original data"""
     with app.app_context():
         # Create a regular exercise category
-        category = get_or_create_category("Deadlift", is_body_mass=False)
+        category = get_or_create_category("Deadlift", user_id=default_user.id, is_body_mass=False)
         
         # Add a test entry
-        save_weight_entry(150.0, "kg", category.id, 8)
+        save_weight_entry(150.0, "kg", category.id, 8, user_id=default_user.id)
         
         # Get entries and create plot with volume processing
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'volume')
         
         # Parse the plot JSON
@@ -110,15 +110,15 @@ def test_enhanced_hover_with_volume_processing(app):
         assert 'Reps: %{customdata[2]}' in hover_template
 
 
-def test_plot_marker_enhancement(app):
+def test_plot_marker_enhancement(app, default_user):
     """Test that plot markers are enhanced for better visibility"""
     with app.app_context():
         # Create a test category and entry
-        category = get_or_create_category("Test Exercise", is_body_mass=False)
-        save_weight_entry(50.0, "kg", category.id, 5)
+        category = get_or_create_category("Test Exercise", user_id=default_user.id, is_body_mass=False)
+        save_weight_entry(50.0, "kg", category.id, 5, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON
@@ -138,15 +138,15 @@ def test_plot_marker_enhancement(app):
         assert trace['hoverinfo'] == 'none'  # Custom template only
 
 
-def test_hover_date_formatting(app):
+def test_hover_date_formatting(app, default_user):
     """Test that dates are properly formatted in hover"""
     with app.app_context():
         # Create a test category and entry
-        category = get_or_create_category("Test Exercise", is_body_mass=False)
-        save_weight_entry(50.0, "kg", category.id, 5)
+        category = get_or_create_category("Test Exercise", user_id=default_user.id, is_body_mass=False)
+        save_weight_entry(50.0, "kg", category.id, 5, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON
@@ -157,15 +157,15 @@ def test_hover_date_formatting(app):
         assert '%{x|%Y-%m-%d}' in hover_template  # Should format date as YYYY-MM-DD
 
 
-def test_hover_layout_settings(app):
+def test_hover_layout_settings(app, default_user):
     """Test that hover layout settings are properly configured"""
     with app.app_context():
         # Create a test category and entry
-        category = get_or_create_category("Test Exercise", is_body_mass=False)
-        save_weight_entry(50.0, "kg", category.id, 5)
+        category = get_or_create_category("Test Exercise", user_id=default_user.id, is_body_mass=False)
+        save_weight_entry(50.0, "kg", category.id, 5, user_id=default_user.id)
         
         # Get entries and create plot
-        entries = WeightEntry.query.filter_by(category_id=category.id).all()
+        entries = WeightEntry.query.filter_by(category_id=category.id, user_id=default_user.id).all()
         plot_json = create_weight_plot(entries, 'all', 'none')
         
         # Parse the plot JSON

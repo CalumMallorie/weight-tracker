@@ -42,14 +42,14 @@ class TestDatabaseErrorHandling:
                     assert not isinstance(e, OperationalError), \
                         "Raw database error not properly handled"
     
-    def test_database_integrity_error_handling(self, app, sample_categories):
+    def test_database_integrity_error_handling(self, app, sample_categories, default_user):
         """Test handling of database integrity constraint violations"""
         with app.app_context():
             # Try to create duplicate categories (should violate unique constraint)
             category_name = "Duplicate Test Category"
             
             # Create first category successfully
-            first_category = services.get_or_create_category(category_name)
+            first_category = services.get_or_create_category(category_name, user_id=default_user.id)
             assert first_category.name == category_name
             
             # Mock integrity error on second attempt
@@ -58,7 +58,7 @@ class TestDatabaseErrorHandling:
                 
                 try:
                     # This should handle the integrity error gracefully
-                    second_category = services.get_or_create_category(category_name)
+                    second_category = services.get_or_create_category(category_name, user_id=default_user.id)
                     # Should either return the existing category or handle error gracefully
                 except IntegrityError:
                     pytest.fail("Integrity error not properly handled")
@@ -252,11 +252,11 @@ class TestMalformedRequestHandling:
 class TestResourceExhaustionHandling:
     """Test handling of resource exhaustion scenarios"""
     
-    def test_large_dataset_handling(self, app, sample_categories):
+    def test_large_dataset_handling(self, app, sample_categories, default_user):
         """Test system behavior with large datasets"""
         with app.app_context():
             # Create a moderate number of entries to test performance
-            initial_count = len(services.get_all_entries())
+            initial_count = len(services.get_all_entries(user_id=default_user.id))
             
             # Create 100 entries (reasonable for testing, not too slow)
             created_entries = []
@@ -265,7 +265,8 @@ class TestResourceExhaustionHandling:
                     entry = services.save_weight_entry(
                         70.0 + (i % 50), 'kg', 
                         sample_categories['benchpress'].id, 
-                        10 + (i % 5)
+                        10 + (i % 5),
+                        user_id=default_user.id
                     )
                     if entry:
                         created_entries.append(entry.id)
@@ -276,7 +277,7 @@ class TestResourceExhaustionHandling:
             assert len(created_entries) == 100
             
             # Test that queries still work efficiently with larger dataset
-            all_entries = services.get_all_entries()
+            all_entries = services.get_all_entries(user_id=default_user.id)
             assert len(all_entries) >= initial_count + 100
             
             # Test plot generation with larger dataset
@@ -288,19 +289,19 @@ class TestResourceExhaustionHandling:
             for entry_id in created_entries:
                 services.delete_entry(entry_id)
     
-    def test_memory_leak_prevention(self, app, sample_categories):
+    def test_memory_leak_prevention(self, app, sample_categories, default_user):
         """Test that repeated operations don't cause memory leaks"""
         with app.app_context():
             # Perform repeated operations to check for memory leaks
             for i in range(50):
                 # Create and delete entries repeatedly
                 entry = services.save_weight_entry(
-                    75.0, 'kg', sample_categories['benchpress'].id, 10)
+                    75.0, 'kg', sample_categories['benchpress'].id, 10, user_id=default_user.id)
                 if entry:
-                    services.delete_entry(entry.id)
+                    services.delete_entry(entry.id, user_id=default_user.id)
                 
                 # Generate plots repeatedly
-                test_entries = services.get_all_entries()[:10]
+                test_entries = services.get_all_entries(user_id=default_user.id)[:10]
                 if test_entries:
                     plot_json = services.create_weight_plot(test_entries, 'week')
                     assert plot_json is not None

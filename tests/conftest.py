@@ -19,15 +19,24 @@ def app():
     })
     
     with app.app_context():
+        # Create tables manually without running migrations to avoid conflicts
         db.create_all()
-        # Create default user for testing
-        from src.models import User
-        default_user = User.create_default_user()
-        db.session.add(default_user)
-        db.session.commit()
         
-        # Create default categories
-        services.create_default_category(user_id=default_user.id)
+        # Check if default user already exists (migration might have created it)
+        from src.models import User
+        default_user = User.query.filter_by(username='default').first()
+        
+        if not default_user:
+            # Create default user for testing if it doesn't exist
+            default_user = User.create_default_user()
+            db.session.add(default_user)
+            db.session.commit()
+        
+        # Create default categories if they don't exist
+        from src.models import WeightCategory
+        body_mass_category = WeightCategory.query.filter_by(name='Body Mass', user_id=default_user.id).first()
+        if not body_mass_category:
+            services.create_default_category(user_id=default_user.id)
         
     yield app
     
@@ -52,9 +61,28 @@ def default_user(app):
 @pytest.fixture 
 def authenticated_client(app, client, default_user):
     """Create authenticated client - authentication is bypassed in test mode"""
-    # In test mode, the login_required decorator is bypassed
-    # so we just return the regular client
+    # In test mode, the login_required decorator is bypassed via auth.py
+    # The get_user_id() function returns user ID 1 in test mode
     return client
+
+
+@pytest.fixture
+def api_headers():
+    """Standard headers for API requests"""
+    return {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+
+
+@pytest.fixture
+def auth_context(app, default_user):
+    """Provide authentication context for tests that need user ID"""
+    return {
+        'user_id': default_user.id,
+        'username': default_user.username,
+        'email': default_user.email
+    }
 
 
 @pytest.fixture 
