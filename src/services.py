@@ -19,8 +19,8 @@ def create_tables() -> None:
         # Create tables
         db.create_all()
         
-        # Create default 'Body Mass' category if it doesn't exist
-        create_default_category()
+        # Note: Default category creation is now handled by the migration system
+        # to ensure proper user_id assignment
         
         logger.info("Database tables created/verified")
     except Exception as e:
@@ -88,7 +88,8 @@ def save_weight_entry(
     weight: float, 
     unit: str, 
     category_id_or_notes: Any = None, 
-    reps: Optional[int] = None
+    reps: Optional[int] = None,
+    user_id: Optional[int] = None
 ) -> WeightEntry:
     """Save a new weight entry to the database
     
@@ -778,8 +779,18 @@ def migrate_old_entries_to_body_mass() -> None:
     logger.info("Checking for entries without category to migrate")
     
     try:
-        # Get or create Body Mass category
-        body_mass = create_default_category()
+        # For migration, we need to handle the case where user_id doesn't exist yet
+        # If we're in a fresh database (testing), try to get the default user
+        default_user = None
+        try:
+            default_user = User.query.filter_by(username='default').first()
+        except:
+            # User table might not exist yet, this is okay during migration
+            pass
+        
+        # Get or create Body Mass category, with user_id if available
+        user_id = default_user.id if default_user else None
+        body_mass = create_default_category(user_id=user_id)
         
         # Use raw SQL to check for the existence of the category_id column
         # to avoid accessing columns that might not exist yet

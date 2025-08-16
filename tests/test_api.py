@@ -19,21 +19,21 @@ pytestmark = pytest.mark.unit
 class TestEntriesAPI:
     """Test entries API endpoints"""
     
-    def test_get_entries_api(self, app, client, sample_categories):
+    def test_get_entries_api(self, app, authenticated_client, sample_categories, default_user):
         """GET /api/entries should return entries as JSON"""
         with app.app_context():
             # Add test entries
-            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
-            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10)
+            services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
+            services.save_weight_entry(105.0, 'kg', sample_categories['benchpress'].id, 10, user_id=default_user.id)
             
-            response = client.get('/api/entries')
+            response = authenticated_client.get('/api/entries')
             assert response.status_code == 200
             
             data = json.loads(response.data)
             assert isinstance(data, list)
             assert len(data) >= 2
     
-    def test_create_entry_via_api(self, app, client, sample_categories):
+    def test_create_entry_via_api(self, app, authenticated_client, sample_categories, default_user):
         """POST /api/entries should create new entry"""
         with app.app_context():
             entry_data = {
@@ -43,7 +43,7 @@ class TestEntriesAPI:
                 'reps': 12
             }
             
-            response = client.post('/api/entries', 
+            response = authenticated_client.post('/api/entries', 
                                  json=entry_data,
                                  content_type='application/json')
             assert response.status_code == 201
@@ -54,11 +54,11 @@ class TestEntriesAPI:
             assert data['unit'] == 'kg'
             assert data['reps'] == 12
     
-    def test_create_body_weight_entry_via_api_uses_body_mass(self, app, client, sample_categories):
+    def test_create_body_weight_entry_via_api_uses_body_mass(self, app, authenticated_client, sample_categories, default_user):
         """API body weight entries should use body mass, not zero"""
         with app.app_context():
             # Add body mass entry first
-            services.save_weight_entry(78.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(78.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             # Create body weight exercise via API
             entry_data = {
@@ -68,7 +68,7 @@ class TestEntriesAPI:
                 'reps': 15
             }
             
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  json=entry_data,
                                  content_type='application/json')
             assert response.status_code == 201
@@ -78,7 +78,7 @@ class TestEntriesAPI:
             assert data['weight'] == 78.0, "API should save body mass weight, not zero"
             assert data['reps'] == 15
     
-    def test_create_body_mass_entry_via_api(self, app, client, sample_categories):
+    def test_create_body_mass_entry_via_api(self, app, authenticated_client, sample_categories, default_user):
         """API body mass entries should save exact weight"""
         with app.app_context():
             entry_data = {
@@ -88,7 +88,7 @@ class TestEntriesAPI:
                 'reps': None
             }
             
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  json=entry_data,
                                  content_type='application/json')
             assert response.status_code == 201
@@ -97,7 +97,7 @@ class TestEntriesAPI:
             assert data['weight'] == 82.5
             assert data['reps'] is None
     
-    def test_create_entry_missing_required_fields(self, app, client):
+    def test_create_entry_missing_required_fields(self, app, authenticated_client, default_user):
         """API should validate required fields"""
         with app.app_context():
             # Missing unit and category_id
@@ -106,7 +106,7 @@ class TestEntriesAPI:
                 'reps': 8
             }
             
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  json=entry_data,
                                  content_type='application/json')
             assert response.status_code == 400
@@ -114,7 +114,7 @@ class TestEntriesAPI:
             data = json.loads(response.data)
             assert 'error' in data
     
-    def test_create_entry_invalid_category(self, app, client):
+    def test_create_entry_invalid_category(self, app, authenticated_client, default_user):
         """API should handle invalid category IDs"""
         with app.app_context():
             entry_data = {
@@ -124,16 +124,16 @@ class TestEntriesAPI:
                 'reps': 8
             }
             
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  json=entry_data,
                                  content_type='application/json')
             assert response.status_code == 400
     
-    def test_update_entry_via_api(self, app, client, sample_categories):
+    def test_update_entry_via_api(self, app, authenticated_client, sample_categories, default_user):
         """PUT /api/entries/<id> should update entry"""
         with app.app_context():
             # Create initial entry
-            entry = services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
+            entry = services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
             
             update_data = {
                 'weight': 105.0,
@@ -142,7 +142,7 @@ class TestEntriesAPI:
                 'reps': 10
             }
             
-            response = client.put(f'/api/entries/{entry.id}',
+            response = authenticated_client.put(f'/api/entries/{entry.id}',
                                 json=update_data,
                                 content_type='application/json')
             assert response.status_code == 200
@@ -151,18 +151,18 @@ class TestEntriesAPI:
             assert data['weight'] == 105.0
             assert data['reps'] == 10
     
-    def test_update_body_weight_entry_via_api_uses_current_body_mass(self, app, client, sample_categories):
+    def test_update_body_weight_entry_via_api_uses_current_body_mass(self, app, authenticated_client, sample_categories, default_user):
         """Updating body weight exercise via API should use current body mass"""
         with app.app_context():
             # Create initial body mass
-            services.save_weight_entry(70.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(70.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             # Create body weight exercise
-            entry = services.save_weight_entry(0, 'kg', sample_categories['pushups'].id, 10)
+            entry = services.save_weight_entry(0, 'kg', sample_categories['pushups'].id, 10, user_id=default_user.id)
             assert entry.weight == 70.0
             
             # Update body mass
-            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None)
+            services.save_weight_entry(75.0, 'kg', sample_categories['body_mass'].id, None, user_id=default_user.id)
             
             # Update the body weight exercise via API
             update_data = {
@@ -172,7 +172,7 @@ class TestEntriesAPI:
                 'reps': 12
             }
             
-            response = client.put(f'/api/entries/{entry.id}',
+            response = authenticated_client.put(f'/api/entries/{entry.id}',
                                 json=update_data,
                                 content_type='application/json')
             assert response.status_code == 200
@@ -182,7 +182,7 @@ class TestEntriesAPI:
             assert data['weight'] == 75.0
             assert data['reps'] == 12
     
-    def test_update_nonexistent_entry(self, app, client):
+    def test_update_nonexistent_entry(self, app, authenticated_client, default_user):
         """Updating non-existent entry should return 404"""
         with app.app_context():
             update_data = {
@@ -192,45 +192,45 @@ class TestEntriesAPI:
                 'reps': 8
             }
             
-            response = client.put('/api/entries/999',
+            response = authenticated_client.put('/api/entries/999',
                                 json=update_data,
                                 content_type='application/json')
             assert response.status_code == 404
     
-    def test_delete_entry_via_api(self, app, client, sample_categories):
+    def test_delete_entry_via_api(self, app, authenticated_client, sample_categories, default_user):
         """DELETE /api/entries/<id> should delete entry"""
         with app.app_context():
             # Create entry to delete
-            entry = services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8)
+            entry = services.save_weight_entry(100.0, 'kg', sample_categories['benchpress'].id, 8, user_id=default_user.id)
             
-            response = client.delete(f'/api/entries/{entry.id}')
+            response = authenticated_client.delete(f'/api/entries/{entry.id}')
             assert response.status_code == 200
             
             # Verify entry was deleted
             deleted_entry = WeightEntry.query.get(entry.id)
             assert deleted_entry is None
     
-    def test_delete_nonexistent_entry(self, app, client):
+    def test_delete_nonexistent_entry(self, app, authenticated_client, default_user):
         """Deleting non-existent entry should return 404"""
         with app.app_context():
-            response = client.delete('/api/entries/999')
+            response = authenticated_client.delete('/api/entries/999')
             assert response.status_code == 404
 
 
 class TestCategoriesAPI:
     """Test categories API endpoints"""
     
-    def test_get_categories_api(self, app, client, sample_categories):
+    def test_get_categories_api(self, app, authenticated_client, sample_categories, default_user):
         """GET /api/categories should return categories as JSON"""
         with app.app_context():
-            response = client.get('/api/categories')
+            response = authenticated_client.get('/api/categories')
             assert response.status_code == 200
             
             data = json.loads(response.data)
             assert isinstance(data, list)
             assert len(data) >= 3  # At least the sample categories
     
-    def test_create_category_via_api(self, app, client):
+    def test_create_category_via_api(self, app, authenticated_client, default_user):
         """POST /api/categories should create new category"""
         with app.app_context():
             category_data = {
@@ -238,7 +238,7 @@ class TestCategoriesAPI:
                 'is_body_weight_exercise': False
             }
             
-            response = client.post('/api/categories',
+            response = authenticated_client.post('/api/categories',
                                  json=category_data,
                                  content_type='application/json')
             assert response.status_code == 200
@@ -246,40 +246,40 @@ class TestCategoriesAPI:
             data = json.loads(response.data)
             assert data['name'] == 'Test Exercise'
     
-    def test_create_category_missing_name(self, app, client):
+    def test_create_category_missing_name(self, app, authenticated_client, default_user):
         """Creating category without name should return error"""
         with app.app_context():
             category_data = {
                 'is_body_weight_exercise': False
             }
             
-            response = client.post('/api/categories',
+            response = authenticated_client.post('/api/categories',
                                  json=category_data,
                                  content_type='application/json')
             assert response.status_code == 400
     
-    def test_delete_category_via_api(self, app, client, sample_categories):
+    def test_delete_category_via_api(self, app, authenticated_client, sample_categories, default_user):
         """DELETE /api/categories/<id> should delete category"""
         with app.app_context():
             # Use squats category (should have no entries)
             category_id = sample_categories['squats'].id
             
-            response = client.delete(f'/api/categories/{category_id}')
+            response = authenticated_client.delete(f'/api/categories/{category_id}')
             assert response.status_code == 200
 
 
 class TestAPIErrorHandling:
     """Test API error handling"""
     
-    def test_invalid_json_returns_400(self, app, client):
+    def test_invalid_json_returns_400(self, app, authenticated_client, default_user):
         """Invalid JSON should return 400 error"""
         with app.app_context():
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  data='invalid json',
                                  content_type='application/json')
             assert response.status_code == 400
     
-    def test_missing_content_type_header(self, app, client, sample_categories):
+    def test_missing_content_type_header(self, app, authenticated_client, sample_categories, default_user):
         """Missing content-type header should be handled"""
         with app.app_context():
             entry_data = {
@@ -290,7 +290,7 @@ class TestAPIErrorHandling:
             }
             
             # Send JSON without proper content-type header
-            response = client.post('/api/entries',
+            response = authenticated_client.post('/api/entries',
                                  data=json.dumps(entry_data))
             # Should handle gracefully (might return 400 or work depending on Flask version)
             assert response.status_code in [200, 201, 400]
@@ -299,10 +299,10 @@ class TestAPIErrorHandling:
 class TestProcessingTypesAPI:
     """Test processing types API endpoint"""
     
-    def test_get_processing_types(self, app, client):
+    def test_get_processing_types(self, app, authenticated_client, default_user):
         """GET /api/processing-types should return available processing options"""
         with app.app_context():
-            response = client.get('/api/processing-types')
+            response = authenticated_client.get('/api/processing-types')
             assert response.status_code == 200
             
             data = json.loads(response.data)
