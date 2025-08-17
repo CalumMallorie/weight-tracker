@@ -174,13 +174,13 @@ def test_hover_layout_settings(app, default_user):
         # Check hover label settings
         layout = plot_data['layout']
         assert 'hoverlabel' in layout
-        assert layout['hoverlabel']['bgcolor'] == 'white'
+        assert layout['hoverlabel']['bgcolor'] == '#3a3a3a'
         # Check font settings (plotly may use 'font' dict instead of 'font_size')
         if 'font_size' in layout['hoverlabel']:
             assert layout['hoverlabel']['font_size'] == 12
         elif 'font' in layout['hoverlabel']:
             assert layout['hoverlabel']['font']['size'] == 12
-        assert layout['hoverlabel']['bordercolor'] == 'darkgray'
+        assert layout['hoverlabel']['bordercolor'] == '#555'
         assert layout['hoverlabel']['align'] == 'left'
         
         # Check hovermode

@@ -456,15 +456,15 @@ def create_weight_plot(
                 font=dict(size=16, color="#7f8c8d")
             )
             fig.update_layout(
-                plot_bgcolor='rgba(240,240,240,0.9)',
-                paper_bgcolor='white',
-                font=dict(family="Arial, sans-serif", size=14),
+                plot_bgcolor='#2d2d2d',
+                paper_bgcolor='#2d2d2d',
+                font=dict(family="Arial, sans-serif", size=14, color='#e0e0e0'),
                 margin=dict(l=40, r=20, t=20, b=50),
                 height=400,
                 autosize=True,
                 title=None,
-                xaxis=dict(title="Date", showgrid=False, showticklabels=False),
-                yaxis=dict(title="Weight", showgrid=False, showticklabels=False),
+                xaxis=dict(title="Date", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
+                yaxis=dict(title="Weight", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
                 showlegend=False
             )
             return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -698,12 +698,13 @@ def create_weight_plot(
         
         # Customize appearance for better mobile experience and hover interaction
         fig.update_layout(
-            plot_bgcolor='rgba(240,240,240,0.9)',
-            font=dict(family="Arial, sans-serif", size=12),  # Reduce font size for mobile
+            plot_bgcolor='#2d2d2d',
+            font=dict(family="Arial, sans-serif", size=12, color='#e0e0e0'),  # Reduce font size for mobile
             hoverlabel=dict(
-                bgcolor="white", 
+                bgcolor="#3a3a3a", 
                 font_size=12,
-                bordercolor="darkgray",
+                bordercolor="#555",
+                font_color="#e0e0e0",
                 align="left"
             ),
             margin=dict(l=40, r=20, t=20, b=50),  # Increase margins, especially bottom
@@ -752,15 +753,15 @@ def create_weight_plot(
             font=dict(size=14, color="#e74c3c")
         )
         fig.update_layout(
-            plot_bgcolor='rgba(240,240,240,0.9)',
+            plot_bgcolor='#2d2d2d',
             paper_bgcolor='white',
             font=dict(family="Arial, sans-serif", size=14),
             margin=dict(l=40, r=20, t=20, b=50),
             height=400,
             autosize=True,
             title=None,
-            xaxis=dict(title="Date", showgrid=False, showticklabels=False),
-            yaxis=dict(title="Weight", showgrid=False, showticklabels=False),
+            xaxis=dict(title="Date", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
+            yaxis=dict(title="Weight", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
             showlegend=False
         )
         return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)

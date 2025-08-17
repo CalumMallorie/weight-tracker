@@ -29,17 +29,17 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         h1, h2 {
-            color: #2c3e50;
+            color: #ffffff;
         }
         .container {
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
             margin-bottom: 20px;
         }
         .form-group {
@@ -49,15 +49,17 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #34495e;
+            color: #b0b0b0;
         }
         input[type="number"], textarea, select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
             box-sizing: border-box;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
         textarea {
             height: 80px;
@@ -116,17 +118,17 @@
             font-size: 24px;
             text-align: center;
             margin: 15px 0;
-            color: #2c3e50;
+            color: #ffffff;
         }
         .nav-links {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 15px 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -138,7 +140,7 @@
         
         .nav-links h1 {
             margin: 0;
-            color: #2c3e50;
+            color: #ffffff;
         }
         .nav-links a {
             color: #1f77b4;
@@ -157,7 +159,7 @@
         }
         
         .username {
-            color: #2c3e50;
+            color: #ffffff;
             font-weight: 600;
             font-size: 14px;
         }
@@ -186,7 +188,7 @@
         
         /* Plot settings styles */
         .plot-settings {
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -197,9 +199,11 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
         
         /* Time filters */
@@ -213,12 +217,12 @@
         
         .time-filter {
             padding: 8px 16px;
-            background-color: #ecf0f1;
+            background-color: #3a3a3a;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
-            color: #7f8c8d;
+            color: #b0b0b0;
             text-decoration: none;
             flex: 1;
             text-align: center;
@@ -227,7 +231,7 @@
         }
         
         .time-filter:hover {
-            background-color: #d5dbdb;
+            background-color: #4a4a4a;
         }
         
         .time-filter.active {
@@ -466,151 +470,28 @@
             flex: 1;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
-            border-left: 1px solid #ddd;
-            background-color: #f8f9fa;
+            border-left: 1px solid #555;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
 
         .number-input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
             box-sizing: border-box;
-        }
-        
-        /* Dark mode styles */
-        .dark-mode-toggle {
-            min-width: 32px;
-            width: 32px;
-            height: 32px;
-            padding: 6px !important;
-            margin: 0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #1f77b4;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .dark-mode-toggle:hover {
-            background-color: #1a6ba3;
-            transform: scale(1.1);
-        }
-        
-        .dark-mode-icon {
-            font-size: 14px;
-            line-height: 1;
-        }
-        
-        [data-theme="dark"] {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] body {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] h1, 
-        [data-theme="dark"] h2 {
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .container {
-            background-color: #2d2d2d;
-            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
-        }
-        
-        [data-theme="dark"] .nav-links {
-            background-color: #2d2d2d;
-            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
-        }
-        
-        [data-theme="dark"] label {
-            color: #b0b0b0;
-        }
-        
-        [data-theme="dark"] input[type="number"], 
-        [data-theme="dark"] textarea, 
-        [data-theme="dark"] select {
             background-color: #3a3a3a;
-            border: 1px solid #555;
             color: #e0e0e0;
         }
         
-        [data-theme="dark"] input[type="number"]:focus, 
-        [data-theme="dark"] textarea:focus, 
-        [data-theme="dark"] select:focus {
-            border-color: #1f77b4;
-            outline: none;
-        }
-        
-        [data-theme="dark"] .input-with-unit select {
-            background-color: #3a3a3a;
-            border-left: 1px solid #555;
-        }
-        
-        [data-theme="dark"] .plot-settings {
-            background-color: #3a3a3a;
-        }
-        
-        [data-theme="dark"] .time-filter {
-            background-color: #4a4a4a;
-            color: #b0b0b0;
-        }
-        
-        [data-theme="dark"] .time-filter:hover {
-            background-color: #5a5a5a;
-        }
-        
-        [data-theme="dark"] .time-filter.active {
-            background-color: #1f77b4;
-            color: white;
-        }
-        
-        [data-theme="dark"] .modal-content {
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.7);
-        }
-        
-        [data-theme="dark"] .close-button {
-            color: #b0b0b0;
-        }
-        
-        [data-theme="dark"] .last-entry {
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .error-message {
-            background-color: #4a2828;
-            border-left-color: #e74c3c;
-            color: #ffb3b3;
-        }
-        
-        [data-theme="dark"] .body-weight-badge {
-            background-color: #27ae60;
-        }
-        
-        [data-theme="dark"] .username {
-            color: #ffffff;
-        }
     </style>
 </head>
 <body>
     <div class="nav-links">
         <div class="title-section">
             <h1>Weight Tracker</h1>
-            <button id="dark-mode-toggle" class="btn btn-secondary dark-mode-toggle" title="Toggle Dark Mode">
-                <span class="dark-mode-icon">🌙</span>
-            </button>
         </div>
         
         <!-- User Info Section -->
@@ -1002,68 +883,8 @@
                 saveSelectedExercise(categorySelect.value, processingType);
             }
             
-            // Dark mode functionality
-            initializeDarkMode();
         });
         
-        // Dark mode functions
-        function initializeDarkMode() {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            // Load saved theme preference
-            const savedTheme = localStorage.getItem('weightTracker_theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Add click event listener
-            darkModeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                
-                // Save preference
-                localStorage.setItem('weightTracker_theme', newTheme);
-            });
-        }
-        
-        function setTheme(theme) {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            document.documentElement.setAttribute('data-theme', theme);
-            
-            // Update toggle icon
-            if (theme === 'dark') {
-                darkModeIcon.textContent = '☀️';
-                darkModeToggle.title = 'Switch to Light Mode';
-            } else {
-                darkModeIcon.textContent = '🌙';
-                darkModeToggle.title = 'Switch to Dark Mode';
-            }
-            
-            // Update plot theme if plot exists
-            updatePlotTheme(theme);
-        }
-        
-        function updatePlotTheme(theme) {
-            const plotElement = document.getElementById('weight-plot');
-            if (plotElement && window.Plotly && plotElement.data) {
-                const isDark = theme === 'dark';
-                const update = {
-                    plot_bgcolor: isDark ? '#2d2d2d' : 'rgba(240,240,240,0.9)',
-                    paper_bgcolor: isDark ? '#2d2d2d' : 'white',
-                    font: { color: isDark ? '#e0e0e0' : '#333' },
-                    'xaxis.gridcolor': isDark ? 'rgba(255,255,255,0.1)' : 'rgba(200,200,200,0.3)',
-                    'yaxis.gridcolor': isDark ? 'rgba(255,255,255,0.1)' : 'rgba(200,200,200,0.3)',
-                    'xaxis.tickfont.color': isDark ? '#e0e0e0' : '#333',
-                    'yaxis.tickfont.color': isDark ? '#e0e0e0' : '#333',
-                    'xaxis.title.font.color': isDark ? '#e0e0e0' : '#333',
-                    'yaxis.title.font.color': isDark ? '#e0e0e0' : '#333'
-                };
-                
-                window.Plotly.relayout(plotElement, update);
-            }
-        }
     </script>
 </body>
 </html> 

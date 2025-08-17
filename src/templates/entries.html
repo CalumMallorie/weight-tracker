@@ -24,17 +24,17 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         h1, h2 {
-            color: #2c3e50;
+            color: #ffffff;
         }
         .container {
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
             margin-bottom: 20px;
         }
         table {
@@ -45,15 +45,15 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #4a4a4a;
         }
         th {
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
             font-weight: 600;
-            color: #34495e;
+            color: #ffffff;
         }
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: #3a3a3a;
         }
         .delete-btn {
             background-color: #e74c3c;
@@ -78,10 +78,10 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            background-color: #fff;
+            background-color: #2d2d2d;
             padding: 15px 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
         }
         
         .title-section {
@@ -106,7 +106,7 @@
         }
         
         .username {
-            color: #2c3e50;
+            color: #ffffff;
             font-weight: 600;
             font-size: 14px;
         }
@@ -128,9 +128,11 @@
             flex: 1;
             min-width: 150px;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
         .filter-group button {
             background-color: #1f77b4;
@@ -221,7 +223,7 @@
         }
         
         .modal-content {
-            background-color: #fff;
+            background-color: #2d2d2d;
             margin: 10% auto;
             padding: 25px;
             border-radius: 8px;
@@ -229,6 +231,7 @@
             width: 90%;
             max-width: 500px;
             animation: modalSlideIn 0.3s ease;
+            color: #e0e0e0;
         }
         
         @keyframes modalSlideIn {
@@ -262,9 +265,11 @@
         .form-group select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
         }
         
         .weight-info {
@@ -315,124 +320,12 @@
             background-color: #7f8c8d;
         }
         
-        /* Dark mode styles */
-        .dark-mode-toggle {
-            min-width: 32px;
-            width: 32px;
-            height: 32px;
-            padding: 6px !important;
-            margin: 0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #1f77b4;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .dark-mode-toggle:hover {
-            background-color: #1a6ba3;
-            transform: scale(1.1);
-        }
-        
-        .dark-mode-icon {
-            font-size: 14px;
-            line-height: 1;
-        }
-        
-        [data-theme="dark"] {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] body {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] h1, 
-        [data-theme="dark"] h2 {
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .container {
-            background-color: #2d2d2d;
-            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
-        }
-        
-        [data-theme="dark"] .nav-links {
-            background-color: #2d2d2d;
-            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
-        }
-        
-        [data-theme="dark"] table {
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] th {
-            background-color: #3a3a3a;
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] td {
-            border-bottom-color: #4a4a4a;
-        }
-        
-        [data-theme="dark"] tr:hover {
-            background-color: #3a3a3a;
-        }
-        
-        [data-theme="dark"] input[type="text"], 
-        [data-theme="dark"] input[type="number"], 
-        [data-theme="dark"] select {
-            background-color: #3a3a3a;
-            border: 1px solid #555;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] input[type="text"]:focus, 
-        [data-theme="dark"] input[type="number"]:focus, 
-        [data-theme="dark"] select:focus {
-            border-color: #1f77b4;
-            outline: none;
-        }
-        
-        [data-theme="dark"] .filter-group select {
-            background-color: #3a3a3a;
-            border-color: #555;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] .modal-content {
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-        }
-        
-        [data-theme="dark"] .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.7);
-        }
-        
-        [data-theme="dark"] .username {
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .close-button {
-            color: #b0b0b0;
-        }
-        
-        [data-theme="dark"] .category-badge {
-            background-color: #1f77b4;
-        }
     </style>
 </head>
 <body>
     <div class="nav-links">
         <div class="title-section">
             <a href="{{ url_for('main.index') }}" data-url="index">← Back to Weight Tracker</a>
-            <button id="dark-mode-toggle" class="btn btn-secondary dark-mode-toggle" title="Toggle Dark Mode">
-                <span class="dark-mode-icon">🌙</span>
-            </button>
         </div>
         
         <!-- User Info Section -->
@@ -728,44 +621,6 @@
             window.location.href = url;
         }
         
-        // Dark mode functionality
-        function initializeDarkMode() {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            // Load saved theme preference
-            const savedTheme = localStorage.getItem('weightTracker_theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Add click event listener
-            darkModeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                
-                // Save preference
-                localStorage.setItem('weightTracker_theme', newTheme);
-            });
-        }
-        
-        function setTheme(theme) {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const darkModeIcon = darkModeToggle.querySelector('.dark-mode-icon');
-            
-            document.documentElement.setAttribute('data-theme', theme);
-            
-            // Update toggle icon
-            if (theme === 'dark') {
-                darkModeIcon.textContent = '☀️';
-                darkModeToggle.title = 'Switch to Light Mode';
-            } else {
-                darkModeIcon.textContent = '🌙';
-                darkModeToggle.title = 'Switch to Dark Mode';
-            }
-        }
-        
-        // Initialize dark mode on page load
-        document.addEventListener('DOMContentLoaded', initializeDarkMode);
     </script>
 </body>
 </html>
