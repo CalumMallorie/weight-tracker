@@ -5,6 +5,11 @@ Playwright test script for Weight Tracker webapp functionality
 
 import asyncio
 import time
+import pytest
+
+# Mark this as a slow/integration test that requires playwright
+pytestmark = [pytest.mark.slow, pytest.mark.integration, pytest.mark.network]
+
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 
 class WeightTrackerTester:
