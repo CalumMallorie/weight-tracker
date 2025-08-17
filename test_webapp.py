@@ -10,7 +10,12 @@ import pytest
 # Mark this as a slow/integration test that requires playwright
 pytestmark = [pytest.mark.slow, pytest.mark.integration, pytest.mark.network]
 
-from playwright.async_api import async_playwright, Page, Browser, BrowserContext
+# Conditional import to prevent CI failures when playwright is not available
+try:
+    from playwright.async_api import async_playwright, Page, Browser, BrowserContext
+except ImportError:
+    # Skip playwright tests if not installed
+    pytest.skip("playwright not available", allow_module_level=True)
 
 class WeightTrackerTester:
     def __init__(self, base_url: str = "http://localhost:8080"):
