@@ -149,10 +149,20 @@ class ChangePasswordForm(FlaskForm):
     def validate_current_password(self, current_password):
         """Validate that current password is correct"""
         from flask_login import current_user
+        from flask import current_app
+        from src.auth import get_user_id
         
-        if current_user.is_authenticated:
-            if not current_user.check_password(current_password.data):
-                raise ValidationError('Current password is incorrect.')
+        # Get current user (handle test mode)
+        if current_app.config.get('TESTING', False):
+            user_id = get_user_id()
+            if user_id:
+                test_user = User.query.get(user_id)
+                if test_user and not test_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
+        else:
+            if current_user.is_authenticated:
+                if not current_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
 
 class ChangeUsernameForm(FlaskForm):
     """Form for changing username"""
@@ -168,10 +178,20 @@ class ChangeUsernameForm(FlaskForm):
     def validate_new_username(self, new_username):
         """Validate that new username is unique and different from current"""
         from flask_login import current_user
+        from flask import current_app
+        from src.auth import get_user_id
         
-        # Check if username is different from current
-        if current_user.is_authenticated and current_user.username == new_username.data:
-            raise ValidationError('New username must be different from current username.')
+        # Get current user (handle test mode)
+        if current_app.config.get('TESTING', False):
+            user_id = get_user_id()
+            if user_id:
+                test_user = User.query.get(user_id)
+                if test_user and test_user.username == new_username.data:
+                    raise ValidationError('New username must be different from current username.')
+        else:
+            # Check if username is different from current
+            if current_user.is_authenticated and current_user.username == new_username.data:
+                raise ValidationError('New username must be different from current username.')
         
         # Check if username is unique
         user = User.query.filter_by(username=new_username.data).first()
@@ -181,10 +201,20 @@ class ChangeUsernameForm(FlaskForm):
     def validate_current_password(self, current_password):
         """Validate that current password is correct"""
         from flask_login import current_user
+        from flask import current_app
+        from src.auth import get_user_id
         
-        if current_user.is_authenticated:
-            if not current_user.check_password(current_password.data):
-                raise ValidationError('Current password is incorrect.')
+        # Get current user (handle test mode)
+        if current_app.config.get('TESTING', False):
+            user_id = get_user_id()
+            if user_id:
+                test_user = User.query.get(user_id)
+                if test_user and not test_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
+        else:
+            if current_user.is_authenticated:
+                if not current_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
 
 class ChangeEmailForm(FlaskForm):
     """Form for changing email address"""
@@ -201,6 +231,8 @@ class ChangeEmailForm(FlaskForm):
     def validate_new_email(self, new_email):
         """Validate that new email is unique, properly formatted, and different from current"""
         from flask_login import current_user
+        from flask import current_app
+        from src.auth import get_user_id
         
         # First validate email format using email-validator
         try:
@@ -208,9 +240,17 @@ class ChangeEmailForm(FlaskForm):
         except EmailNotValidError:
             raise ValidationError('Please enter a valid email address.')
         
-        # Check if email is different from current
-        if current_user.is_authenticated and current_user.email == new_email.data:
-            raise ValidationError('New email must be different from current email.')
+        # Get current user (handle test mode)
+        if current_app.config.get('TESTING', False):
+            user_id = get_user_id()
+            if user_id:
+                test_user = User.query.get(user_id)
+                if test_user and test_user.email == new_email.data:
+                    raise ValidationError('New email must be different from current email.')
+        else:
+            # Check if email is different from current
+            if current_user.is_authenticated and current_user.email == new_email.data:
+                raise ValidationError('New email must be different from current email.')
         
         # Check if email is unique
         user = User.query.filter_by(email=new_email.data).first()
@@ -220,7 +260,17 @@ class ChangeEmailForm(FlaskForm):
     def validate_current_password(self, current_password):
         """Validate that current password is correct"""
         from flask_login import current_user
+        from flask import current_app
+        from src.auth import get_user_id
         
-        if current_user.is_authenticated:
-            if not current_user.check_password(current_password.data):
-                raise ValidationError('Current password is incorrect.')
+        # Get current user (handle test mode)
+        if current_app.config.get('TESTING', False):
+            user_id = get_user_id()
+            if user_id:
+                test_user = User.query.get(user_id)
+                if test_user and not test_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
+        else:
+            if current_user.is_authenticated:
+                if not current_user.check_password(current_password.data):
+                    raise ValidationError('Current password is incorrect.')
