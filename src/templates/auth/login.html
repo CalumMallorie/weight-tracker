@@ -11,7 +11,7 @@
     
     <div class="form-group">
         {{ form.login.label(class="form-label") }}
-        {{ form.login(class="form-control", placeholder="Enter your username or email", autocomplete="username email", inputmode="email") }}
+        {{ form.login(class="form-control", placeholder="Enter your username or email", autocomplete="username email", inputmode="email", autocapitalize="none") }}
         {% if form.login.errors %}
             <div class="field-errors">
                 {% for error in form.login.errors %}
@@ -23,7 +23,7 @@
 
     <div class="form-group">
         {{ form.password.label(class="form-label") }}
-        {{ form.password(class="form-control", placeholder="Enter your password", autocomplete="current-password") }}
+        {{ form.password(class="form-control", placeholder="Enter your password", autocomplete="current-password", autocapitalize="none") }}
         {% if form.password.errors %}
             <div class="field-errors">
                 {% for error in form.password.errors %}
