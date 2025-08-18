@@ -4,8 +4,8 @@ from datetime import datetime, UTC
 
 from src.models import db
 from src.models.user import User
-from src.forms import LoginForm, RegistrationForm, PasswordResetRequestForm, PasswordResetForm, ChangePasswordForm
-from src.auth import anonymous_required, login_required
+from src.forms import LoginForm, RegistrationForm, PasswordResetRequestForm, PasswordResetForm, ChangePasswordForm, ChangeUsernameForm, ChangeEmailForm
+from src.auth import anonymous_required, login_required, get_user_id
 
 # Create authentication blueprint
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -162,8 +162,19 @@ def reset_password(token):
 @login_required
 def profile():
     """User profile page"""
-    stats = current_user.get_stats()
-    return render_template('auth/profile.html', user=current_user, stats=stats, title='Profile')
+    # Get user (handle test mode)
+    if current_app.config.get('TESTING', False):
+        user_id = get_user_id()
+        user = User.query.get(user_id) if user_id else None
+    else:
+        user = current_user
+    
+    if user:
+        stats = user.get_stats()
+        return render_template('auth/profile.html', user=user, stats=stats, title='Profile')
+    else:
+        flash('User not found.', 'error')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
@@ -186,6 +197,74 @@ def change_password():
             flash('Password change failed. Please try again.', 'error')
     
     return render_template('auth/change_password.html', form=form, title='Change Password')
+
+@auth_bp.route('/change-username', methods=['GET', 'POST'])
+@login_required
+def change_username():
+    """Change username when logged in"""
+    form = ChangeUsernameForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Get user (handle test mode)
+            if current_app.config.get('TESTING', False):
+                user_id = get_user_id()
+                user = User.query.get(user_id) if user_id else None
+            else:
+                user = current_user
+            
+            if user:
+                # Update the username
+                user.username = form.new_username.data
+                user.updated_at = datetime.now(UTC)
+                
+                db.session.commit()
+                
+                flash('Your username has been changed successfully!', 'success')
+                return redirect(url_for('auth.profile'))
+            else:
+                flash('User not found.', 'error')
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Username change error: {str(e)}')
+            flash('Username change failed. Please try again.', 'error')
+    
+    return render_template('auth/change_username.html', form=form, title='Change Username')
+
+@auth_bp.route('/change-email', methods=['GET', 'POST'])
+@login_required
+def change_email():
+    """Change email address when logged in"""
+    form = ChangeEmailForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Get user (handle test mode)
+            if current_app.config.get('TESTING', False):
+                user_id = get_user_id()
+                user = User.query.get(user_id) if user_id else None
+            else:
+                user = current_user
+            
+            if user:
+                # Update the email
+                user.email = form.new_email.data
+                user.updated_at = datetime.now(UTC)
+                
+                db.session.commit()
+                
+                flash('Your email address has been changed successfully!', 'success')
+                return redirect(url_for('auth.profile'))
+            else:
+                flash('User not found.', 'error')
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Email change error: {str(e)}')
+            flash('Email change failed. Please try again.', 'error')
+    
+    return render_template('auth/change_email.html', form=form, title='Change Email')
 
 @auth_bp.route('/delete-account', methods=['POST'])
 @login_required
