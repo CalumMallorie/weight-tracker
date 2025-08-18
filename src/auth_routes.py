@@ -4,7 +4,7 @@ from datetime import datetime, UTC
 
 from src.models import db
 from src.models.user import User
-from src.forms import LoginForm, RegistrationForm, PasswordResetRequestForm, PasswordResetForm, ChangePasswordForm
+from src.forms import LoginForm, RegistrationForm, PasswordResetRequestForm, PasswordResetForm, ChangePasswordForm, ChangeUsernameForm, ChangeEmailForm
 from src.auth import anonymous_required, login_required
 
 # Create authentication blueprint
@@ -186,6 +186,54 @@ def change_password():
             flash('Password change failed. Please try again.', 'error')
     
     return render_template('auth/change_password.html', form=form, title='Change Password')
+
+@auth_bp.route('/change-username', methods=['GET', 'POST'])
+@login_required
+def change_username():
+    """Change username when logged in"""
+    form = ChangeUsernameForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Update the username
+            current_user.username = form.new_username.data
+            current_user.updated_at = datetime.now(UTC)
+            
+            db.session.commit()
+            
+            flash('Your username has been changed successfully!', 'success')
+            return redirect(url_for('auth.profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Username change error: {str(e)}')
+            flash('Username change failed. Please try again.', 'error')
+    
+    return render_template('auth/change_username.html', form=form, title='Change Username')
+
+@auth_bp.route('/change-email', methods=['GET', 'POST'])
+@login_required
+def change_email():
+    """Change email address when logged in"""
+    form = ChangeEmailForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Update the email
+            current_user.email = form.new_email.data
+            current_user.updated_at = datetime.now(UTC)
+            
+            db.session.commit()
+            
+            flash('Your email address has been changed successfully!', 'success')
+            return redirect(url_for('auth.profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Email change error: {str(e)}')
+            flash('Email change failed. Please try again.', 'error')
+    
+    return render_template('auth/change_email.html', form=form, title='Change Email')
 
 @auth_bp.route('/delete-account', methods=['POST'])
 @login_required

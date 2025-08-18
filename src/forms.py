@@ -153,3 +153,74 @@ class ChangePasswordForm(FlaskForm):
         if current_user.is_authenticated:
             if not current_user.check_password(current_password.data):
                 raise ValidationError('Current password is incorrect.')
+
+class ChangeUsernameForm(FlaskForm):
+    """Form for changing username"""
+    new_username = StringField('New Username', validators=[
+        DataRequired(message='Username is required'),
+        Length(min=3, max=80, message='Username must be between 3 and 80 characters')
+    ])
+    current_password = PasswordField('Current Password', validators=[
+        DataRequired(message='Current password is required to change username')
+    ])
+    submit = SubmitField('Change Username')
+    
+    def validate_new_username(self, new_username):
+        """Validate that new username is unique and different from current"""
+        from flask_login import current_user
+        
+        # Check if username is different from current
+        if current_user.is_authenticated and current_user.username == new_username.data:
+            raise ValidationError('New username must be different from current username.')
+        
+        # Check if username is unique
+        user = User.query.filter_by(username=new_username.data).first()
+        if user:
+            raise ValidationError('Username already exists. Please choose a different username.')
+    
+    def validate_current_password(self, current_password):
+        """Validate that current password is correct"""
+        from flask_login import current_user
+        
+        if current_user.is_authenticated:
+            if not current_user.check_password(current_password.data):
+                raise ValidationError('Current password is incorrect.')
+
+class ChangeEmailForm(FlaskForm):
+    """Form for changing email address"""
+    new_email = StringField('New Email Address', validators=[
+        DataRequired(message='Email is required'),
+        Email(message='Please enter a valid email address'),
+        Length(max=120, message='Email must be less than 120 characters')
+    ])
+    current_password = PasswordField('Current Password', validators=[
+        DataRequired(message='Current password is required to change email')
+    ])
+    submit = SubmitField('Change Email')
+    
+    def validate_new_email(self, new_email):
+        """Validate that new email is unique, properly formatted, and different from current"""
+        from flask_login import current_user
+        
+        # First validate email format using email-validator
+        try:
+            validate_email(new_email.data)
+        except EmailNotValidError:
+            raise ValidationError('Please enter a valid email address.')
+        
+        # Check if email is different from current
+        if current_user.is_authenticated and current_user.email == new_email.data:
+            raise ValidationError('New email must be different from current email.')
+        
+        # Check if email is unique
+        user = User.query.filter_by(email=new_email.data).first()
+        if user:
+            raise ValidationError('Email already registered. Please use a different email address.')
+    
+    def validate_current_password(self, current_password):
+        """Validate that current password is correct"""
+        from flask_login import current_user
+        
+        if current_user.is_authenticated:
+            if not current_user.check_password(current_password.data):
+                raise ValidationError('Current password is incorrect.')
