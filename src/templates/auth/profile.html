@@ -34,14 +34,20 @@
 </div>
 
 <!-- Account Information -->
-<div class="form-group">
+<div class="form-group" style="position: relative;">
     <label>Username</label>
-    <input type="text" value="{{ user.username }}" readonly class="form-control" style="background-color: #f8f9fa;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="text" value="{{ user.username }}" readonly class="form-control" style="background-color: #f8f9fa; flex: 1;">
+        <a href="{{ url_for('auth.change_username') }}" style="color: #3498db; text-decoration: none; font-size: 14px; white-space: nowrap;">Change</a>
+    </div>
 </div>
 
-<div class="form-group">
+<div class="form-group" style="position: relative;">
     <label>Email Address</label>
-    <input type="email" value="{{ user.email }}" readonly class="form-control" style="background-color: #f8f9fa;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="email" value="{{ user.email }}" readonly class="form-control" style="background-color: #f8f9fa; flex: 1;">
+        <a href="{{ url_for('auth.change_email') }}" style="color: #3498db; text-decoration: none; font-size: 14px; white-space: nowrap;">Change</a>
+    </div>
 </div>
 
 <!-- Account Actions -->

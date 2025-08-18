@@ -1,0 +1,47 @@
+{% extends "auth/base.html" %}
+
+{% block title %}Change Email - Weight Tracker{% endblock %}
+
+{% block header %}Change Email Address{% endblock %}
+{% block subtitle %}Update your email address{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+        {{ form.new_email.label(class="form-label") }}
+        {{ form.new_email(class="form-control", placeholder="Enter your new email address", autocomplete="email", inputmode="email", type="email", autocapitalize="none") }}
+        {% if form.new_email.errors %}
+            <div class="field-errors">
+                {% for error in form.new_email.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        {{ form.current_password.label(class="form-label") }}
+        {{ form.current_password(class="form-control", placeholder="Enter your current password", autocomplete="current-password", autocapitalize="none") }}
+        {% if form.current_password.errors %}
+            <div class="field-errors">
+                {% for error in form.current_password.errors %}
+                    <div class="field-error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <small style="color: #7f8c8d; font-size: 14px; margin-top: 5px; display: block;">
+            Your current password is required to change your email for security.
+        </small>
+    </div>
+
+    {{ form.submit(class="btn") }}
+</form>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    <a href="{{ url_for('auth.profile') }}">← Back to Profile</a>
+</div>
+{% endblock %}
