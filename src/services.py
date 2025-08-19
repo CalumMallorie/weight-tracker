@@ -463,8 +463,24 @@ def create_weight_plot(
                 height=400,
                 autosize=True,
                 title=None,
-                xaxis=dict(title="Date", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
-                yaxis=dict(title="Weight", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
+                xaxis=dict(
+                    title="Date", 
+                    showgrid=False, 
+                    showticklabels=False, 
+                    title_font=dict(color='#e0e0e0'), 
+                    tickfont=dict(color='#e0e0e0'),
+                    tickcolor='#e0e0e0',
+                    linecolor='#e0e0e0'
+                ),
+                yaxis=dict(
+                    title="Weight", 
+                    showgrid=False, 
+                    showticklabels=False, 
+                    title_font=dict(color='#e0e0e0'), 
+                    tickfont=dict(color='#e0e0e0'),
+                    tickcolor='#e0e0e0',
+                    linecolor='#e0e0e0'
+                ),
                 showlegend=False
             )
             return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -697,9 +713,23 @@ def create_weight_plot(
         )
         
         # Customize appearance for better mobile experience and hover interaction
+        # Determine smart x-axis formatting based on date range
+        date_range_days = (df['date'].max() - df['date'].min()).days if len(df) > 1 else 0
+        
+        if date_range_days <= 90:  # 3 months or less - use MM-DD format
+            x_tickformat = '%m-%d'
+            x_dtick = 'D7'  # Show weekly ticks
+        elif date_range_days <= 365:  # 1 year or less - use abbreviated months
+            x_tickformat = '%b'
+            x_dtick = 'M1'  # Show monthly ticks
+        else:  # More than 1 year - use year-month format
+            x_tickformat = '%Y-%m'
+            x_dtick = 'M3'  # Show quarterly ticks
+        
         fig.update_layout(
             plot_bgcolor='#2d2d2d',
-            font=dict(family="Arial, sans-serif", size=12, color='#e0e0e0'),  # Reduce font size for mobile
+            paper_bgcolor='#2d2d2d',  # Fix outer background color
+            font=dict(family="Arial, sans-serif", size=12, color='#e0e0e0'),
             hoverlabel=dict(
                 bgcolor="#3a3a3a", 
                 font_size=12,
@@ -707,32 +737,37 @@ def create_weight_plot(
                 font_color="#e0e0e0",
                 align="left"
             ),
-            margin=dict(l=40, r=20, t=20, b=50),  # Increase margins, especially bottom
+            margin=dict(l=40, r=20, t=20, b=50),
             height=400,
             autosize=True,
-            showlegend=False,  # Remove legend to save space
-            hovermode='closest',  # Always show closest point info
-            title=None,  # Explicitly remove title
+            showlegend=False,
+            hovermode='closest',
+            title=None,
         )
         
         fig.update_xaxes(
-            tickformat='%Y-%m-%d',
-            gridcolor='rgba(200,200,200,0.3)',
-            title_font=dict(size=11),  # Smaller axis title font
-            tickfont=dict(size=10),    # Smaller tick font
+            tickformat=x_tickformat,
+            dtick=x_dtick,
+            gridcolor='rgba(160,160,160,0.3)',  # Lighter grid for better contrast
+            tickcolor='#e0e0e0',  # Fix tick color for dark mode
+            linecolor='#e0e0e0',  # Fix axis line color
+            title_font=dict(size=11, color='#e0e0e0'),  # Fix title color
+            tickfont=dict(size=10, color='#e0e0e0'),    # Fix tick font color
             automargin=True,
-            fixedrange=True,  # Prevents x-axis zoom on mobile
-            title_standoff=15    # Add space between title and axis
+            fixedrange=True,
+            title_standoff=15
         )
         
         fig.update_yaxes(
-            gridcolor='rgba(200,200,200,0.3)',
-            title_font=dict(size=11),  # Smaller axis title font  
-            tickfont=dict(size=10),    # Smaller tick font
+            gridcolor='rgba(160,160,160,0.3)',  # Lighter grid for better contrast
+            tickcolor='#e0e0e0',  # Fix tick color for dark mode
+            linecolor='#e0e0e0',  # Fix axis line color
+            title_font=dict(size=11, color='#e0e0e0'),  # Fix title color
+            tickfont=dict(size=10, color='#e0e0e0'),    # Fix tick font color
             automargin=True,
-            fixedrange=True,  # Prevents y-axis zoom on mobile
-            title_standoff=15,   # Add space between title and axis
-            side='left'          # Ensure y-axis title is on the left
+            fixedrange=True,
+            title_standoff=15,
+            side='left'
         )
         
         # Convert to JSON for embedding in HTML
