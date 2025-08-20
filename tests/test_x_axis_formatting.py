@@ -45,12 +45,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use dtick intervals for natural tick spacing
-            assert 'dtick' in xaxis
-            assert 'tickformat' in xaxis
-            
-            # Should have appropriate format for short ranges
+            # Should use MM-DD format with appropriate ticks for ~30 day range
             assert xaxis.get('tickformat') == '%m-%d'
+            assert xaxis.get('dtick') == 'D3'  # Every 3 days for 28-day span (optimal density)
+            
             
     def test_medium_range_tick_formatting(self, app, default_user):
         """Test tick formatting for medium date ranges (90-150 days)"""
@@ -82,13 +80,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use dtick intervals for natural spacing
-            assert 'dtick' in xaxis
-            assert 'tickformat' in xaxis
+            # Should use MM-DD format with bi-weekly ticks for ~120 day range
+            assert xaxis.get('tickformat') == '%m-%d'
+            assert xaxis.get('dtick') == 'D14'
             
-            # Should use appropriate format for medium ranges
-            tick_format = xaxis.get('tickformat')
-            assert tick_format in ['%m-%d', '%b']
             
     def test_long_range_tick_formatting(self, app, default_user):
         """Test tick formatting for long date ranges (150-365 days)"""
@@ -120,12 +115,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use monthly intervals for long ranges
-            assert 'dtick' in xaxis
-            assert 'tickformat' in xaxis
-            
-            # Should use month names for readability
+            # Should use month names format
             assert xaxis.get('tickformat') == '%b'
+            assert xaxis.get('dtick') == 'M1'
+            
             
     def test_very_long_range_tick_formatting(self, app, default_user):
         """Test tick formatting for very long date ranges (>365 days)"""
@@ -157,13 +150,11 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use appropriate format for 2-year range
-            assert 'dtick' in xaxis
-            assert 'tickformat' in xaxis
+            # Should use appropriate format for 2-year range 
+            # 720 days (24 months) should fall into 2-year range (≤730 days)
+            assert xaxis.get('tickformat') == '%b %Y'  # Month and year format
+            assert xaxis.get('dtick') == 'M2'  # Every 2 months
             
-            # Should use year-month or month-year format for very long ranges
-            tick_format = xaxis.get('tickformat')
-            assert tick_format in ['%b %Y', '%Y-%m']
     
     def test_tick_overlap_prevention(self, app, default_user):
         """Test that tick configuration prevents overlapping"""
@@ -195,17 +186,13 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use appropriate interval to prevent overlapping
-            assert 'dtick' in xaxis
-            assert 'tickformat' in xaxis
-            
-            # Should have reasonable tick spacing for high density data
-            dtick = xaxis.get('dtick')
-            assert dtick is not None and dtick != 'D1'  # Should not be daily for 14 days
+            # Should have reasonable tick spacing even with high data density  
+            assert xaxis.get('dtick') == 'D3'  # Every 3 days for 14-day range to prevent crowding
             
             # Should have auto margins and appropriate angle
             assert xaxis.get('automargin') is True
-            assert isinstance(xaxis.get('tickangle'), (int, float))  # Should be numeric angle
+            assert xaxis.get('tickangle') == 0  # Horizontal for short ranges
+            
     
     def test_optimal_tick_count(self, app, default_user):
         """Test that tick count stays within optimal range"""
@@ -258,11 +245,7 @@ class TestXAxisTickFormatting:
                 assert xaxis.get('automargin') is True
                 assert isinstance(xaxis.get('tickangle'), (int, float))  # Should be numeric angle
                 
-                # Should have reasonable tick configuration
-                assert 'dtick' in xaxis
-                assert 'tickformat' in xaxis
-                
-                # Should have appropriate format based on range
+                # Should have reasonable tick format
                 tick_format = xaxis.get('tickformat')
                 assert tick_format in ['%m-%d', '%b', '%b %Y', '%Y-%m']
     
