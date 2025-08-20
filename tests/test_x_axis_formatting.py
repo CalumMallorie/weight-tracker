@@ -45,9 +45,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use MM-DD format with appropriate range-based dtick
-            assert xaxis.get('tickformat') == '%m-%d'
-            assert 'dtick' in xaxis
+            # Should use array-based ticks for better control
+            assert xaxis.get('tickmode') == 'array'
+            assert 'tickvals' in xaxis
+            assert 'ticktext' in xaxis
             
             
     def test_medium_range_tick_formatting(self, app, default_user):
@@ -80,9 +81,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use MM-DD format with range-based dtick for ~120 day range
-            assert xaxis.get('tickformat') == '%m-%d'
-            assert 'dtick' in xaxis
+            # Should use array-based ticks for medium ranges
+            assert xaxis.get('tickmode') == 'array'
+            assert 'tickvals' in xaxis
+            assert 'ticktext' in xaxis
             
             
     def test_long_range_tick_formatting(self, app, default_user):
@@ -115,9 +117,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use month names format
-            assert xaxis.get('tickformat') == '%b'
-            assert 'dtick' in xaxis
+            # Should use array-based ticks with month names for year range
+            assert xaxis.get('tickmode') == 'array'
+            assert 'tickvals' in xaxis
+            assert 'ticktext' in xaxis
             
             
     def test_very_long_range_tick_formatting(self, app, default_user):
@@ -150,9 +153,10 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should use appropriate format for 2-year range (≤730 days)
-            assert xaxis.get('tickformat') in ['%b %Y', '%Y-%m']
-            assert 'dtick' in xaxis
+            # Should use array-based ticks for very long ranges
+            assert xaxis.get('tickmode') == 'array'
+            assert 'tickvals' in xaxis
+            assert 'ticktext' in xaxis
             
     
     def test_tick_overlap_prevention(self, app, default_user):
@@ -185,12 +189,14 @@ class TestXAxisTickFormatting:
             layout = plot_data['layout']
             xaxis = layout['xaxis']
             
-            # Should have reasonable tick spacing even with high data density
-            assert 'dtick' in xaxis
+            # Should use array-based ticks with reasonable spacing
+            assert xaxis.get('tickmode') == 'array'
+            assert 'tickvals' in xaxis
+            assert 'ticktext' in xaxis
             
             # Should have auto margins and appropriate angle
             assert xaxis.get('automargin') is True
-            assert isinstance(xaxis.get('tickangle'), (int, float))
+            assert xaxis.get('tickangle') == 0  # Array-based ticks use 0 angle
             
     
     def test_optimal_tick_count(self, app, default_user):
@@ -242,11 +248,12 @@ class TestXAxisTickFormatting:
                 
                 # All plots should have these anti-overlap properties
                 assert xaxis.get('automargin') is True
-                assert isinstance(xaxis.get('tickangle'), (int, float))  # Should be numeric angle
+                assert xaxis.get('tickangle') == 0  # Array-based ticks use 0 angle
                 
-                # Should have reasonable tick format
-                tick_format = xaxis.get('tickformat')
-                assert tick_format in ['%m-%d', '%b', '%b %Y', '%Y-%m']
+                # Should use array-based tick configuration
+                assert xaxis.get('tickmode') == 'array'
+                assert 'tickvals' in xaxis
+                assert 'ticktext' in xaxis
     
     def test_mobile_responsive_settings(self, app, default_user):
         """Test that x-axis settings are mobile-responsive"""
@@ -275,7 +282,7 @@ class TestXAxisTickFormatting:
             # Should have mobile-responsive properties
             assert xaxis.get('automargin') is True
             assert xaxis.get('fixedrange') is True  # Prevents zoom on mobile
-            assert isinstance(xaxis.get('tickangle'), (int, float))  # Should be a numeric angle
+            assert xaxis.get('tickangle') == 0  # Array-based ticks use 0 angle
             
             # Font sizes should be appropriate for mobile
             assert xaxis.get('tickfont', {}).get('size') == 10

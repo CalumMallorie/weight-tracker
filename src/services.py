@@ -437,6 +437,38 @@ def convert_to_kg(weight: float, unit: str) -> float:
         return weight * 0.45359237
     return weight
 
+def _build_ticks(date_min: pd.Timestamp, date_max: pd.Timestamp, time_window: str):
+    """Explicit tick arrays to avoid dtick issues"""
+    date_min = pd.to_datetime(date_min).normalize()
+    date_max = pd.to_datetime(date_max).normalize()
+    
+    # Calculate date range for dynamic tick selection
+    date_range_days = (date_max - date_min).days
+    
+    if time_window == 'week' or date_range_days <= 10:
+        rng = pd.date_range(date_min, date_max, freq='D')
+        tickvals = [d.to_pydatetime() for d in rng]
+        ticktext = [d.strftime('%d %b') for d in rng]
+        return tickvals, ticktext
+    elif time_window == 'month' or date_range_days <= 90:
+        start = date_min - pd.Timedelta(days=int(date_min.dayofweek))  # Monday align
+        rng = pd.date_range(start, date_max, freq='W-MON')
+        tickvals = [d.to_pydatetime() for d in rng]
+        ticktext = [d.strftime('%d %b') for d in rng]
+        return tickvals, ticktext
+    elif time_window == 'year' or date_range_days <= 365:
+        start = pd.Timestamp(date_min.year, date_min.month, 1)
+        rng = pd.date_range(start, date_max, freq='MS')
+        tickvals = [d.to_pydatetime() for d in rng]
+        ticktext = [d.strftime('%b') for d in rng]
+        return tickvals, ticktext
+    else:  # Very long ranges or 'all' time window
+        start = pd.Timestamp(date_min.year, date_min.month, 1)
+        rng = pd.date_range(start, date_max, freq='3MS')  # Quarterly ticks
+        tickvals = [d.to_pydatetime() for d in rng]
+        ticktext = [d.strftime('%b %Y') for d in rng]
+        return tickvals, ticktext
+
 def create_weight_plot(
     entries: List[WeightEntry], 
     time_window: str, 
@@ -569,13 +601,17 @@ def create_weight_plot(
             # Plot raw reps instead of weight
             df['processed_value'] = df['reps']
         
-        # If there's only one data point, duplicate it slightly offset to show a line
+        # === Normalize to day and aggregate ===
+        df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.normalize()
+        agg = {'processed_value': 'mean', 'weight_original': 'mean', 'unit': 'first'}
+        if 'reps' in df.columns:
+            agg['reps'] = 'mean'
+        df = df.groupby('date', as_index=False).agg(agg).sort_values('date')
+        
+        # One-point case: add next day to keep a line
         if len(df) == 1:
             new_row = df.iloc[0].copy()
-            # Ensure date is a datetime object before adding timedelta
-            if isinstance(new_row['date'], str):
-                new_row['date'] = pd.to_datetime(new_row['date'])
-            new_row['date'] = new_row['date'] + timedelta(hours=1)
+            new_row['date'] = new_row['date'] + pd.Timedelta(days=1)
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         
         # Y-axis value based on processing type
@@ -590,66 +626,26 @@ def create_weight_plot(
             labels={y_value: y_axis_label, 'date': 'Date'},
         )
         
-        # Add enhanced trendlines using daily aggregated values (mean, max, min)
+        # Trendlines on daily aggregates (df already daily)
         if len(df) > 1:
-            # Group by date and calculate daily aggregates
-            df['date_only'] = df['date'].dt.date
-            daily_stats = df.groupby('date_only')['processed_value'].agg(['mean', 'min', 'max']).reset_index()
-            daily_stats['date_only'] = pd.to_datetime(daily_stats['date_only'])
-            
-            if len(daily_stats) > 1:
-                # Create trendlines using linear regression
-                try:
-                    from scipy.stats import linregress
-                    
-                    # Convert dates to numeric values for regression
-                    x_numeric = (daily_stats['date_only'] - daily_stats['date_only'].min()).dt.days
-                    
-                    # Mean trendline (clear/prominent)
-                    slope_mean, intercept_mean, r_value_mean, _, _ = linregress(x_numeric, daily_stats['mean'])
-                    trend_mean = slope_mean * x_numeric + intercept_mean
-                    
-                    fig.add_scatter(
-                        x=daily_stats['date_only'],
-                        y=trend_mean,
-                        mode='lines',
-                        name='Mean Trend',
-                        line=dict(color='rgba(231, 76, 60, 0.8)', width=3, dash='dash'),
-                        hovertemplate='Mean Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
-                    )
-                    
-                    # Min trendline (faint/transparent)
-                    slope_min, intercept_min, r_value_min, _, _ = linregress(x_numeric, daily_stats['min'])
-                    trend_min = slope_min * x_numeric + intercept_min
-                    
-                    fig.add_scatter(
-                        x=daily_stats['date_only'],
-                        y=trend_min,
-                        mode='lines',
-                        name='Min Trend',
-                        line=dict(color='rgba(52, 152, 219, 0.3)', width=1, dash='dot'),
-                        hovertemplate='Min Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
-                    )
-                    
-                    # Max trendline (faint/transparent)
-                    slope_max, intercept_max, r_value_max, _, _ = linregress(x_numeric, daily_stats['max'])
-                    trend_max = slope_max * x_numeric + intercept_max
-                    
-                    fig.add_scatter(
-                        x=daily_stats['date_only'],
-                        y=trend_max,
-                        mode='lines',
-                        name='Max Trend',
-                        line=dict(color='rgba(46, 204, 113, 0.3)', width=1, dash='dot'),
-                        hovertemplate='Max Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
-                    )
-                    
-                    logger.info(f"Added trendlines: Mean(slope={slope_mean:.3f}, R²={r_value_mean**2:.3f}), Min(slope={slope_min:.3f}), Max(slope={slope_max:.3f})")
-                    
-                except ImportError:
-                    logger.warning("scipy not available, skipping trendline calculation")
-                except Exception as e:
-                    logger.warning(f"Could not calculate trendlines: {str(e)}")
+            daily_stats = df.rename(columns={'date': 'date_only'})
+            try:
+                from scipy.stats import linregress
+                x_numeric = (daily_stats['date_only'] - daily_stats['date_only'].min()).dt.days
+                slope_mean, intercept_mean, r_value_mean, _, _ = linregress(x_numeric, daily_stats['processed_value'])
+                fig.add_scatter(
+                    x=daily_stats['date_only'],
+                    y=slope_mean * x_numeric + intercept_mean,
+                    mode='lines',
+                    name='Mean Trend',
+                    line=dict(color='rgba(231, 76, 60, 0.8)', width=3, dash='dash'),
+                    hovertemplate='Mean Trend: %{y:.1f}<br>Date: %{x|%Y-%m-%d}<extra></extra>'
+                )
+                logger.info(f"Added trendlines: Mean(slope={slope_mean:.3f}, R²={r_value_mean**2:.3f})")
+            except ImportError:
+                logger.warning("scipy not available, skipping trendline calculation")
+            except Exception as e:
+                logger.warning(f"Could not calculate trendlines: {str(e)}")
         
         # Enhanced hover information - always show comprehensive data
         # Format date in hover template to be more readable
@@ -712,55 +708,13 @@ def create_weight_plot(
             hoverinfo='none',  # Use custom hovertemplate only
         )
         
-        # Customize appearance for better mobile experience and hover interaction
-        # Calculate dynamic tick intervals to naturally produce ≤10 ticks
-        # This approach uses Plotly's dtick intervals instead of manually selecting positions
-        date_range_days = (df['date'].max() - df['date'].min()).days if len(df) > 1 else 0
-        
-        # Debug logging
-        logger.info(f"Data date range: {df['date'].min()} to {df['date'].max()}")
-        logger.info(f"Date range span: {date_range_days} days")
-        logger.info(f"Number of entries: {len(df)}")
-        
-        # Target: Maximum 10 ticks for optimal readability on any screen size
-        max_ticks = 10
-        
-        # Calculate appropriate dtick interval and format based on date range
-        if date_range_days == 0:  # Single date
-            x_dtick = 'D1'  # Daily tick for single point
-            x_tickformat = '%m-%d'
-            tick_angle = 0
-        elif date_range_days <= 10:  # Very short range (≤10 days)
-            x_dtick = 'D1'
-            x_tickformat = '%m-%d'
-            tick_angle = 0
-        elif date_range_days <= 30:  # Short range (≤1 month)
-            x_dtick = 'D3'  # Every 3 days
-            x_tickformat = '%m-%d'
-            tick_angle = 0
-        elif date_range_days <= 90:  # Medium-short range (≤3 months)
-            x_dtick = 'D7'  # Weekly ticks
-            x_tickformat = '%m-%d'
-            tick_angle = 30
-        elif date_range_days <= 150:  # ~5 months or less
-            x_dtick = 'D14'  # Bi-weekly ticks
-            x_tickformat = '%m-%d'
-            tick_angle = 30
-        elif date_range_days <= 365:  # Long range (≤1 year)
-            x_dtick = 'M1'  # Monthly ticks
-            x_tickformat = '%b'  # Month names
-            tick_angle = 0
-        elif date_range_days <= 730:  # Very long range (≤2 years)
-            x_dtick = 'M2'
-            x_tickformat = '%b %Y'  # Month and year
-            tick_angle = 0
-        else:  # Extremely long range (>2 years)
-            x_dtick = 'M3'
-            x_tickformat = '%Y-%m'  # Year-month format
-            tick_angle = 0
-        
-        # Log the calculated interval for debugging
-        logger.info(f"Date range: {date_range_days} days, using dtick: {x_dtick}, format: {x_tickformat}")
+        # Generate explicit tick arrays for cleaner axis formatting
+        date_min = df['date'].min()
+        date_max = df['date'].max()
+        tickvals, ticktext = _build_ticks(date_min, date_max, time_window)
+        logger.info(f"Explicit ticks: n={0 if tickvals is None else len(tickvals)} for window={time_window}")
+
+        x_range = [date_min - pd.Timedelta(hours=12), date_max + pd.Timedelta(hours=12)]
         
         fig.update_layout(
             plot_bgcolor='#2d2d2d',
@@ -782,21 +736,20 @@ def create_weight_plot(
         )
         
         fig.update_xaxes(
-            tickformat=x_tickformat,
-            dtick=x_dtick,
-            tickangle=tick_angle,  # Conditional angle to prevent overlap
-            nticks=max_ticks,  # Add explicit nticks as backup constraint
-            tickmode='linear',  # Ensure we use linear tick mode with dtick
-            gridcolor='rgba(160,160,160,0.3)',  # Lighter grid for better contrast
-            tickcolor='#e0e0e0',  # Fix tick color for dark mode
-            linecolor='#e0e0e0',  # Fix axis line color
-            title_font=dict(size=11, color='#e0e0e0'),  # Fix title color
-            tickfont=dict(size=10, color='#e0e0e0'),    # Fix tick font color
-            automargin=True,  # Automatically adjust margins for labels
-            fixedrange=True,  # Prevent zoom on mobile
-            title_standoff=15,  # Space between title and axis
-            ticklabelmode='instant',  # Labels represent specific points in time
-            showspikes=False  # Disable spike lines for cleaner look
+            tickmode='array' if tickvals else 'auto',
+            tickvals=tickvals,
+            ticktext=ticktext,
+            tickangle=0,
+            range=x_range,
+            gridcolor='rgba(160,160,160,0.3)',
+            tickcolor='#e0e0e0',
+            linecolor='#e0e0e0',
+            title_font=dict(size=11, color='#e0e0e0'),
+            tickfont=dict(size=10, color='#e0e0e0'),
+            automargin=True,
+            fixedrange=True,
+            title_standoff=15,
+            showspikes=False
         )
         
         fig.update_yaxes(
