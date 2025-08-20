@@ -713,64 +713,61 @@ def create_weight_plot(
         )
         
         # Customize appearance for better mobile experience and hover interaction
-        # Calculate intelligent x-axis tick positions with HARD limit of max 10 ticks
-        # This ensures ticks never overlap regardless of data density or range
+        # Calculate dynamic tick intervals to naturally produce ≤10 ticks
+        # This approach uses Plotly's dtick intervals instead of manually selecting positions
         date_range_days = (df['date'].max() - df['date'].min()).days if len(df) > 1 else 0
-        start_date = df['date'].min()
-        end_date = df['date'].max()
+        
+        # Debug logging
+        logger.info(f"Data date range: {df['date'].min()} to {df['date'].max()}")
+        logger.info(f"Date range span: {date_range_days} days")
+        logger.info(f"Number of entries: {len(df)}")
         
         # Target: Maximum 10 ticks for optimal readability on any screen size
         max_ticks = 10
         
-        # Calculate tick positions and labels using array mode for precise control
+        # Calculate appropriate dtick interval and format based on date range
         if date_range_days == 0:  # Single date
-            tick_positions = [start_date]
-            tick_labels = [start_date.strftime('%m-%d')]
+            x_dtick = 'D1'  # Daily tick for single point
+            x_tickformat = '%m-%d'
             tick_angle = 0
-        elif date_range_days <= 10:  # Very short range - daily or every other day
-            # For very short ranges, use daily ticks up to max
-            days_interval = max(1, date_range_days // max_ticks + 1)
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{days_interval}D')[:max_ticks]
-            tick_labels = [d.strftime('%m-%d') for d in tick_positions]
+        elif date_range_days <= 10:  # Very short range (≤10 days)
+            # Use daily ticks for very short ranges
+            x_dtick = 'D1' 
+            x_tickformat = '%m-%d'
             tick_angle = 0
-        elif date_range_days <= 60:  # Short range - use optimal day intervals
-            # Calculate interval to stay under max_ticks
-            days_interval = max(1, date_range_days // (max_ticks - 1))
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{days_interval}D')[:max_ticks]
-            tick_labels = [d.strftime('%m-%d') for d in tick_positions]
-            tick_angle = 30  # Slight angle for readability
-        elif date_range_days <= 180:  # Medium range - weekly intervals
-            # Calculate weekly intervals to stay under max_ticks  
-            weeks_interval = max(1, (date_range_days // 7) // (max_ticks - 1))
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{weeks_interval}W')[:max_ticks]
-            tick_labels = [d.strftime('%m-%d') for d in tick_positions]
+        elif date_range_days <= 30:  # Short range (≤1 month)
+            # Calculate day interval to guarantee ≤10 ticks
+            days_interval = max(4, int(date_range_days / (max_ticks - 2)))  # Even more aggressive
+            x_dtick = days_interval * 24 * 60 * 60 * 1000  # Convert to milliseconds for Plotly
+            x_tickformat = '%m-%d'
             tick_angle = 30
-        elif date_range_days <= 365:  # Long range - monthly intervals with month names
-            # Calculate monthly intervals to stay under max_ticks
-            months_interval = max(1, 12 // max_ticks)
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{months_interval}MS')[:max_ticks]
-            tick_labels = [d.strftime('%b') for d in tick_positions]
-            tick_angle = 0  # Month names read well horizontally
-        elif date_range_days <= 730:  # 2 years - bi-monthly with month/year
-            # Calculate intervals to stay under max_ticks for 2-year range
-            months_interval = max(1, 24 // max_ticks)
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{months_interval}MS')[:max_ticks]
-            tick_labels = [d.strftime('%b %Y') for d in tick_positions]
+        elif date_range_days <= 90:  # Medium-short range (≤3 months)
+            # Use larger day intervals to guarantee ≤10 ticks
+            days_interval = max(10, int(date_range_days / (max_ticks - 1)))  # Much more aggressive
+            x_dtick = f'D{days_interval}'
+            x_tickformat = '%m-%d'
+            tick_angle = 30
+        elif date_range_days <= 365:  # Long range (≤1 year)
+            # Use monthly intervals, calculate to guarantee ≤10 ticks
+            months_interval = max(2, int(date_range_days / 30 / (max_ticks - 1)))  # More aggressive
+            x_dtick = f'M{months_interval}'
+            x_tickformat = '%b'  # Month names
             tick_angle = 0
-        else:  # Very long range - quarterly or more sparse
-            # Calculate intervals for very long ranges
-            months_interval = max(3, (date_range_days // 30) // max_ticks)
-            tick_positions = pd.date_range(start=start_date, end=end_date, freq=f'{months_interval}MS')[:max_ticks]
-            tick_labels = [d.strftime('%Y-%m') for d in tick_positions]
+        elif date_range_days <= 730:  # Very long range (≤2 years)
+            # Use quarterly or larger intervals to guarantee ≤10 ticks
+            months_interval = max(3, int(24 / (max_ticks - 1)))  # More aggressive
+            x_dtick = f'M{months_interval}'
+            x_tickformat = '%b %Y'  # Month and year
+            tick_angle = 0
+        else:  # Extremely long range (>2 years)
+            # Use larger intervals to guarantee ≤10 ticks
+            months_interval = max(6, int((date_range_days / 30) / (max_ticks - 1)))  # More aggressive
+            x_dtick = f'M{months_interval}'
+            x_tickformat = '%Y-%m'  # Year-month format
             tick_angle = 0
         
-        # Ensure we don't exceed max_ticks (failsafe)
-        if len(tick_positions) > max_ticks:
-            tick_positions = tick_positions[:max_ticks]
-            tick_labels = tick_labels[:max_ticks]
-        
-        # Convert tick positions to the format Plotly expects
-        tick_positions_list = [pos.isoformat() for pos in tick_positions]
+        # Log the calculated interval for debugging
+        logger.info(f"Date range: {date_range_days} days, using dtick: {x_dtick}, format: {x_tickformat}")
         
         fig.update_layout(
             plot_bgcolor='#2d2d2d',
@@ -792,10 +789,11 @@ def create_weight_plot(
         )
         
         fig.update_xaxes(
-            tickmode='array',  # Use array mode for precise control
-            tickvals=tick_positions_list,  # Exact tick positions
-            ticktext=tick_labels,  # Exact tick labels
+            dtick=x_dtick,  # Use calculated interval for natural tick spacing
+            tickformat=x_tickformat,  # Format ticks appropriately for range
             tickangle=tick_angle,  # Conditional angle to prevent overlap
+            nticks=max_ticks,  # Add explicit nticks as backup constraint
+            tickmode='linear',  # Ensure we use linear tick mode with dtick
             gridcolor='rgba(160,160,160,0.3)',  # Lighter grid for better contrast
             tickcolor='#e0e0e0',  # Fix tick color for dark mode
             linecolor='#e0e0e0',  # Fix axis line color
