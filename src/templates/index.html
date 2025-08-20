@@ -597,10 +597,9 @@
         </form>
     </div>
     
-    {% if entries %}
+    <!-- Always show plot controls and container for better UX -->
     <div class="container">
-        {% if entries|length > 0 %}
-        <!-- Plot Settings -->
+        <!-- Plot Settings - always visible to prevent disappearing controls -->
         <div class="plot-settings">
             <label for="processing-filter">Plot Type:</label>
             <select id="processing-filter" onchange="updateProcessing()">
@@ -636,15 +635,19 @@
             </div>
         </div>
     
+        {% if entries and entries|length > 0 %}
         <div class="last-entry">
             Latest: {{ entries[0].weight }} {{ entries[0].unit }}
             {% if entries[0].reps and not selected_category.is_body_mass %}
                 ({{ entries[0].reps }} reps)
             {% endif %}
         </div>
+        {% endif %}
         
+        <!-- Plot container - always visible -->
         <div class="plot-container" id="weight-plot"></div>
         
+        <!-- Plot rendering - always attempt to show plot -->
         {% if plot_json %}
         <script>
             var plotData = {{ plot_json|safe }};
@@ -666,17 +669,22 @@
                 });
             } catch (e) {
                 console.error("Error creating plot:", e);
-                document.getElementById('weight-plot').innerHTML = '<div style="color: red; padding: 20px;">Error creating plot: ' + e.message + '</div>';
+                document.getElementById('weight-plot').innerHTML = '<div style="color: #e74c3c; background: #2d2d2d; padding: 20px; border-radius: 5px;">Error creating plot: ' + e.message + '</div>';
             }
         </script>
         {% else %}
-        <div style="padding: 20px; color: #777;">No plot data available to display.</div>
+        <div style="padding: 20px; color: #7f8c8d; text-align: center; background: #2d2d2d; border-radius: 5px;">
+            No data available for the selected time period.<br>
+            Try selecting a different time range or add some entries.
+        </div>
         {% endif %}
-        {% else %}
-        <p>No entries found. Add your first record using the form above.</p>
+        
+        {% if not entries or entries|length == 0 %}
+        <div style="margin-top: 20px; padding: 20px; color: #7f8c8d; text-align: center;">
+            <p>No entries found. Add your first record using the form above.</p>
+        </div>
         {% endif %}
     </div>
-    {% endif %}
     
     <script>
         // Persistence functionality using localStorage

@@ -719,7 +719,10 @@ def create_weight_plot(
         if date_range_days <= 90:  # 3 months or less - use MM-DD format
             x_tickformat = '%m-%d'
             x_dtick = 'D7'  # Show weekly ticks
-        elif date_range_days <= 365:  # 1 year or less - use abbreviated months
+        elif date_range_days <= 150:  # ~5 months or less - use MM-DD format  
+            x_tickformat = '%m-%d'
+            x_dtick = 'D14'  # Show bi-weekly ticks
+        elif date_range_days <= 365:  # 1 year or less - use month names as requested
             x_tickformat = '%b'
             x_dtick = 'M1'  # Show monthly ticks
         else:  # More than 1 year - use year-month format
@@ -789,14 +792,30 @@ def create_weight_plot(
         )
         fig.update_layout(
             plot_bgcolor='#2d2d2d',
-            paper_bgcolor='white',
-            font=dict(family="Arial, sans-serif", size=14),
+            paper_bgcolor='#2d2d2d',  # Fix dark mode background
+            font=dict(family="Arial, sans-serif", size=14, color='#e0e0e0'),  # Fix font color
             margin=dict(l=40, r=20, t=20, b=50),
             height=400,
             autosize=True,
             title=None,
-            xaxis=dict(title="Date", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
-            yaxis=dict(title="Weight", showgrid=False, showticklabels=False, title_font=dict(color='#e0e0e0'), tickfont=dict(color='#e0e0e0')),
+            xaxis=dict(
+                title="Date", 
+                showgrid=False, 
+                showticklabels=False, 
+                title_font=dict(color='#e0e0e0'), 
+                tickfont=dict(color='#e0e0e0'),
+                tickcolor='#e0e0e0',
+                linecolor='#e0e0e0'
+            ),
+            yaxis=dict(
+                title="Weight", 
+                showgrid=False, 
+                showticklabels=False, 
+                title_font=dict(color='#e0e0e0'), 
+                tickfont=dict(color='#e0e0e0'),
+                tickcolor='#e0e0e0',
+                linecolor='#e0e0e0'
+            ),
             showlegend=False
         )
         return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
